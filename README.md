@@ -1,6 +1,11 @@
 # WOPR Web UI Plugin
 
-React-based web dashboard for WOPR. Built with SolidJS, TailwindCSS, and Vite.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![WOPR](https://img.shields.io/badge/WOPR-Plugin-blue)](https://github.com/TSavo/wopr)
+
+React-based web dashboard for [WOPR](https://github.com/TSavo/wopr). Built with SolidJS, TailwindCSS, and Vite.
+
+> Part of the [WOPR](https://github.com/TSavo/wopr) ecosystem - Self-sovereign AI session management over P2P.
 
 ## Features
 
