@@ -21,6 +21,7 @@ import {
 } from "./lib/api";
 import Settings from "./components/Settings";
 import Plugins from "./components/Plugins";
+import Skills from "./components/Skills";
 
 // Cache for dynamically imported components
 const componentCache = new Map<string, any>();
@@ -77,7 +78,7 @@ const PluginComponent: Component<{
 };
 
 const App: Component = () => {
-	const [view, setView] = createSignal<"chat" | "settings" | "plugins">("chat");
+	const [view, setView] = createSignal<"chat" | "settings" | "plugins" | "skills">("chat");
 	const [sessions, setSessions] = createSignal<Session[]>([]);
 	const [selectedSession, setSelectedSession] = createSignal<string | null>(
 		null,
@@ -230,6 +231,12 @@ const App: Component = () => {
 							Plugins
 						</button>
 						<button
+							onClick={() => setView("skills")}
+							class={`px-3 py-1 rounded text-sm ${view() === "skills" ? "bg-wopr-accent text-wopr-bg" : "text-wopr-muted hover:text-wopr-text"}`}
+						>
+							Skills
+						</button>
+						<button
 							onClick={() => setView("settings")}
 							class={`px-3 py-1 rounded text-sm ${view() === "settings" ? "bg-wopr-accent text-wopr-bg" : "text-wopr-muted hover:text-wopr-text"}`}
 						>
@@ -353,6 +360,10 @@ const App: Component = () => {
 				<main class="flex-1 flex flex-col">
 					<Show when={view() === "plugins"}>
 						<Plugins />
+					</Show>
+
+					<Show when={view() === "skills"}>
+						<Skills />
 					</Show>
 
 					<Show when={view() === "settings"}>
