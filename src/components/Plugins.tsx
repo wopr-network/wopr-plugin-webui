@@ -289,7 +289,7 @@ const Plugins: Component = () => {
 												<div class="flex items-center gap-2">
 													<input
 														type="checkbox"
-														checked={!!configValues()[key]}
+														checked={!!(configValues()[key] ?? field.default ?? false)}
 														onChange={(e) =>
 															updateConfigValue(key, e.currentTarget.checked)
 														}
@@ -301,9 +301,7 @@ const Plugins: Component = () => {
 												</div>
 											) : field.type === "select" ? (
 												<select
-													value={String(
-														configValues()[key] ?? field.default ?? "",
-													)}
+													value={configValues()[key] ?? field.default ?? ""}
 													onChange={(e) =>
 														updateConfigValue(key, e.currentTarget.value)
 													}
