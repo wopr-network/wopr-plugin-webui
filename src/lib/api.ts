@@ -68,6 +68,61 @@ export interface UiComponentExtension {
 	description?: string;
 }
 
+// --- Manifest-driven panel types ---
+
+export interface WebUIPanel {
+	id: string;
+	title: string;
+	icon?: string;
+	type: "status" | "config" | "logs" | "metrics" | "custom";
+	endpoints?: string[];
+	configFields?: string[];
+	component?: string;
+	pollIntervalMs?: number;
+}
+
+export interface WebUIRoute {
+	path: string;
+	title: string;
+	icon?: string;
+	component: string;
+}
+
+export interface WebUIManifest {
+	panels?: WebUIPanel[];
+	routes?: WebUIRoute[];
+}
+
+export interface PluginManifestSummary {
+	name: string;
+	version: string;
+	description: string;
+	icon?: string;
+	capabilities: string[];
+	configSchema?: {
+		title: string;
+		description?: string;
+		fields: ConfigFieldDef[];
+	};
+	lifecycle?: {
+		healthEndpoint?: string;
+		healthIntervalMs?: number;
+	};
+	webui?: WebUIManifest;
+}
+
+export interface ConfigFieldDef {
+	name: string;
+	type: string;
+	label: string;
+	placeholder?: string;
+	required?: boolean;
+	default?: unknown;
+	options?: { value: string; label: string }[];
+	description?: string;
+	secret?: boolean;
+}
+
 export interface PluginUiComponentProps {
 	api: {
 		getSessions: () => Promise<{ sessions: Session[] }>;
@@ -264,6 +319,25 @@ export const api = {
 		await request(`/plugins/${encodeURIComponent(id)}/config`, {
 			method: "PUT",
 			body: JSON.stringify(config),
+		});
+	},
+
+	// Plugin manifests (declarative panels)
+	async getPluginManifests(): Promise<{ manifests: PluginManifestSummary[] }> {
+		return request("/plugins/manifests");
+	},
+
+	// Poll a plugin endpoint (status/metrics)
+	async pollPluginEndpoint(pluginName: string, endpoint: string): Promise<unknown> {
+		const normalized = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+		return request(`/plugins/${encodeURIComponent(pluginName)}/proxy${normalized}`);
+	},
+
+	// Set a plugin config value
+	async setPluginConfigValue(pluginName: string, key: string, value: unknown): Promise<void> {
+		await request(`/plugins/${encodeURIComponent(pluginName)}/config/${encodeURIComponent(key)}`, {
+			method: "PUT",
+			body: JSON.stringify({ value }),
 		});
 	},
 

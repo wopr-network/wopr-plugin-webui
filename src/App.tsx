@@ -22,6 +22,7 @@ import {
 import Settings from "./components/Settings";
 import Plugins from "./components/Plugins";
 import Skills from "./components/Skills";
+import PluginPanels from "./components/PluginPanels";
 
 // Cache for dynamically imported components
 const componentCache = new Map<string, any>();
@@ -360,6 +361,7 @@ const App: Component = () => {
 				<main class="flex-1 flex flex-col">
 					<Show when={view() === "plugins"}>
 						<Plugins />
+						<PluginPanels />
 					</Show>
 
 					<Show when={view() === "skills"}>
