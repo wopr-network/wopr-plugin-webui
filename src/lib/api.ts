@@ -240,7 +240,8 @@ export const api = {
 
   // Poll a plugin endpoint (status/metrics)
   async pollPluginEndpoint(pluginName: string, endpoint: string): Promise<unknown> {
-    return request(`/plugins/${encodeURIComponent(pluginName)}/proxy${endpoint}`);
+    const normalized = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    return request(`/plugins/${encodeURIComponent(pluginName)}/proxy${normalized}`);
   },
 
   // Get a plugin's config

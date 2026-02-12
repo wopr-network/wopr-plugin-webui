@@ -1,5 +1,6 @@
 import {
 	type Component,
+	createEffect,
 	createResource,
 	createSignal,
 	For,
@@ -30,29 +31,35 @@ const StatusPanel: Component<{
 	const endpoints = () => props.panel.endpoints ?? [];
 	const intervalMs = () => props.panel.pollIntervalMs ?? DEFAULT_POLL_MS;
 
-	async function poll() {
-		const results: Record<
-			string,
-			{ ok: boolean; data?: unknown; error?: string }
-		> = {};
-		for (const ep of endpoints()) {
-			try {
-				const data = await api.pollPluginEndpoint(props.plugin.name, ep);
-				results[ep] = { ok: true, data };
-			} catch (err: unknown) {
-				results[ep] = {
-					ok: false,
-					error: err instanceof Error ? err.message : "Unknown error",
-				};
-			}
-		}
-		setStatuses(results);
-	}
+	createEffect(() => {
+		let cancelled = false;
 
-	// Initial poll + interval
-	poll();
-	const timer = setInterval(poll, intervalMs());
-	onCleanup(() => clearInterval(timer));
+		async function poll() {
+			const results: Record<
+				string,
+				{ ok: boolean; data?: unknown; error?: string }
+			> = {};
+			for (const ep of endpoints()) {
+				try {
+					const data = await api.pollPluginEndpoint(props.plugin.name, ep);
+					results[ep] = { ok: true, data };
+				} catch (err: unknown) {
+					results[ep] = {
+						ok: false,
+						error: err instanceof Error ? err.message : "Unknown error",
+					};
+				}
+			}
+			if (!cancelled) setStatuses(results);
+		}
+
+		poll();
+		const timer = setInterval(poll, intervalMs());
+		onCleanup(() => {
+			cancelled = true;
+			clearInterval(timer);
+		});
+	});
 
 	return (
 		<div class="space-y-2">
@@ -94,6 +101,7 @@ const ConfigPanel: Component<{
 	const [config, setConfig] = createSignal<Record<string, unknown>>({});
 	const [saving, setSaving] = createSignal(false);
 	const [message, setMessage] = createSignal<string | null>(null);
+	const [loadError, setLoadError] = createSignal<string | null>(null);
 
 	// Load plugin config on mount
 	const [loaded] = createResource(async () => {
@@ -104,7 +112,8 @@ const ConfigPanel: Component<{
 			>;
 			setConfig(data);
 			return true;
-		} catch {
+		} catch (err: unknown) {
+			setLoadError(err instanceof Error ? err.message : "Failed to load config");
 			return false;
 		}
 	});
@@ -144,9 +153,16 @@ const ConfigPanel: Component<{
 
 	return (
 		<div class="space-y-3">
+			<Show when={loadError()}>
+				<p class="text-red-400 text-sm">Failed to load config: {loadError()}</p>
+			</Show>
 			<Show
 				when={loaded()}
-				fallback={<p class="text-wopr-muted text-sm">Loading config...</p>}
+				fallback={
+					<Show when={!loadError()}>
+						<p class="text-wopr-muted text-sm">Loading config...</p>
+					</Show>
+				}
 			>
 				<For each={fields()}>
 					{(field) => (
@@ -270,26 +286,45 @@ const MetricsPanel: Component<{
 	const endpoints = () => props.panel.endpoints ?? [];
 	const intervalMs = () => props.panel.pollIntervalMs ?? DEFAULT_POLL_MS;
 
-	async function poll() {
-		for (const ep of endpoints()) {
-			try {
-				const data = (await api.pollPluginEndpoint(
-					props.plugin.name,
-					ep,
-				)) as Record<string, unknown>;
-				setMetrics((prev) => ({ ...prev, ...data }));
-			} catch {
-				// silently skip failed endpoints
+	const [stale, setStale] = createSignal(false);
+
+	createEffect(() => {
+		let cancelled = false;
+
+		async function poll() {
+			for (const ep of endpoints()) {
+				try {
+					const data = (await api.pollPluginEndpoint(
+						props.plugin.name,
+						ep,
+					)) as Record<string, unknown>;
+					if (!cancelled) {
+						setMetrics((prev) => ({ ...prev, ...data }));
+						setStale(false);
+					}
+				} catch (err: unknown) {
+					console.error(
+						`[MetricsPanel] Failed to poll ${ep} for ${props.plugin.name}:`,
+						err,
+					);
+					if (!cancelled) setStale(true);
+				}
 			}
 		}
-	}
 
-	poll();
-	const timer = setInterval(poll, intervalMs());
-	onCleanup(() => clearInterval(timer));
+		poll();
+		const timer = setInterval(poll, intervalMs());
+		onCleanup(() => {
+			cancelled = true;
+			clearInterval(timer);
+		});
+	});
 
 	return (
 		<div class="space-y-1">
+			<Show when={stale()}>
+				<p class="text-yellow-400 text-xs">Metrics may be stale (poll error)</p>
+			</Show>
 			<Show
 				when={Object.keys(metrics()).length > 0}
 				fallback={<p class="text-wopr-muted text-sm">Waiting for metrics...</p>}
@@ -396,23 +431,35 @@ const PluginPanels: Component = () => {
 				when={!manifests.loading}
 				fallback={<p class="text-wopr-muted">Loading plugins...</p>}
 			>
-				<Show
-					when={pluginsWithPanels().length > 0}
-					fallback={
-						<div class="text-center py-12 text-wopr-muted">
-							<p class="text-lg mb-2">No plugin panels available</p>
-							<p class="text-sm">
-								Install plugins that declare a <code>webui</code> section in
-								their manifest to see panels here.
-							</p>
-						</div>
-					}
-				>
-					<div class="space-y-8">
-						<For each={pluginsWithPanels()}>
-							{(plugin) => <PluginSection plugin={plugin} />}
-						</For>
+				<Show when={manifests.error}>
+					<div class="text-center py-12">
+						<p class="text-red-400 text-lg mb-2">Failed to load plugins</p>
+						<p class="text-wopr-muted text-sm">
+							{manifests.error instanceof Error
+								? manifests.error.message
+								: "Unknown error"}
+						</p>
 					</div>
+				</Show>
+				<Show when={!manifests.error}>
+					<Show
+						when={pluginsWithPanels().length > 0}
+						fallback={
+							<div class="text-center py-12 text-wopr-muted">
+								<p class="text-lg mb-2">No plugin panels available</p>
+								<p class="text-sm">
+									Install plugins that declare a <code>webui</code> section in
+									their manifest to see panels here.
+								</p>
+							</div>
+						}
+					>
+						<div class="space-y-8">
+							<For each={pluginsWithPanels()}>
+								{(plugin) => <PluginSection plugin={plugin} />}
+							</For>
+						</div>
+					</Show>
 				</Show>
 			</Show>
 		</div>
