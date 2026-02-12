@@ -68,6 +68,61 @@ export interface UiComponentExtension {
   description?: string;
 }
 
+// --- Manifest-driven panel types ---
+
+export interface WebUIPanel {
+  id: string;
+  title: string;
+  icon?: string;
+  type: "status" | "config" | "logs" | "metrics" | "custom";
+  endpoints?: string[];
+  configFields?: string[];
+  component?: string;
+  pollIntervalMs?: number;
+}
+
+export interface WebUIRoute {
+  path: string;
+  title: string;
+  icon?: string;
+  component: string;
+}
+
+export interface WebUIManifest {
+  panels?: WebUIPanel[];
+  routes?: WebUIRoute[];
+}
+
+export interface PluginManifestSummary {
+  name: string;
+  version: string;
+  description: string;
+  icon?: string;
+  capabilities: string[];
+  configSchema?: {
+    title: string;
+    description?: string;
+    fields: ConfigFieldDef[];
+  };
+  lifecycle?: {
+    healthEndpoint?: string;
+    healthIntervalMs?: number;
+  };
+  webui?: WebUIManifest;
+}
+
+export interface ConfigFieldDef {
+  name: string;
+  type: string;
+  label: string;
+  placeholder?: string;
+  required?: boolean;
+  default?: unknown;
+  options?: { value: string; label: string }[];
+  description?: string;
+  secret?: boolean;
+}
+
 export interface PluginUiComponentProps {
   api: {
     getSessions: () => Promise<{ sessions: Session[] }>;
@@ -176,6 +231,29 @@ export const api = {
   // UI Component Extensions
   async getUiComponents(): Promise<{ components: UiComponentExtension[] }> {
     return request("/plugins/components");
+  },
+
+  // Plugin manifests (declarative panels)
+  async getPluginManifests(): Promise<{ manifests: PluginManifestSummary[] }> {
+    return request("/plugins/manifests");
+  },
+
+  // Poll a plugin endpoint (status/metrics)
+  async pollPluginEndpoint(pluginName: string, endpoint: string): Promise<unknown> {
+    return request(`/plugins/${encodeURIComponent(pluginName)}/proxy${endpoint}`);
+  },
+
+  // Get a plugin's config
+  async getPluginConfig(pluginName: string): Promise<unknown> {
+    return request(`/plugins/${encodeURIComponent(pluginName)}/config`);
+  },
+
+  // Set a plugin config value
+  async setPluginConfigValue(pluginName: string, key: string, value: unknown): Promise<void> {
+    await request(`/plugins/${encodeURIComponent(pluginName)}/config/${encodeURIComponent(key)}`, {
+      method: "PUT",
+      body: JSON.stringify({ value }),
+    });
   },
 
   // Identity
