@@ -15,7 +15,7 @@
     "vitest": "^4.0.18"
   },
   "main": "index.js",
-  "name": "wopr-plugin-webui",
+  "name": "@wopr-network/wopr-plugin-webui",
   "scripts": {
     "build": "vite build",
     "check": "biome check src/ && tsc --noEmit",
@@ -24,7 +24,8 @@
     "lint": "biome check src/",
     "lint:fix": "biome check --fix src/",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
   },
   "type": "module",
   "version": "0.1.0",
@@ -34,5 +35,11 @@
       "webui"
     ],
     "type": "plugin"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ]
 }
