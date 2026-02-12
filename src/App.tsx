@@ -13,6 +13,7 @@ import {
 import { Dynamic } from "solid-js/web";
 import { api, type Session, type StreamEvent, type WebUiExtension, type UiComponentExtension, type PluginUiComponentProps } from "./lib/api";
 import Settings from "./components/Settings";
+import Skills from "./components/Skills";
 
 // Cache for dynamically imported components
 const componentCache = new Map<string, any>();
@@ -67,7 +68,7 @@ const PluginComponent: Component<{
 };
 
 const App: Component = () => {
-  const [view, setView] = createSignal<"chat" | "settings">("chat");
+  const [view, setView] = createSignal<"chat" | "settings" | "skills">("chat");
   const [sessions, setSessions] = createSignal<Session[]>([]);
   const [selectedSession, setSelectedSession] = createSignal<string | null>(null);
   const [message, setMessage] = createSignal("");
@@ -215,6 +216,12 @@ const App: Component = () => {
             >
               Settings
             </button>
+            <button
+              onClick={() => setView("skills")}
+              class={`px-3 py-1 rounded text-sm ${view() === "skills" ? "bg-wopr-accent text-wopr-bg" : "text-wopr-muted hover:text-wopr-text"}`}
+            >
+              Skills
+            </button>
           </div>
           
           {/* Status bar plugin components */}
@@ -330,6 +337,10 @@ const App: Component = () => {
                 </div>
               )}
             </For>
+          </Show>
+
+          <Show when={view() === "skills"}>
+            <Skills />
           </Show>
 
           <Show when={view() === "chat"}>

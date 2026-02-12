@@ -303,6 +303,103 @@ describe("api.resetConfig", () => {
   });
 });
 
+describe("api.getSkills", () => {
+  it("should GET /api/skills", async () => {
+    const skills = {
+      skills: [{ id: "s1", name: "greet", description: "Greeting skill", enabled: true }],
+    };
+    mockFetch.mockResolvedValue(mockJsonResponse(skills));
+
+    const result = await api.getSkills();
+
+    expect(mockFetch).toHaveBeenCalledWith("/api/skills", {
+      headers: { "Content-Type": "application/json" },
+    });
+    expect(result).toEqual(skills);
+  });
+});
+
+describe("api.getAvailableSkills", () => {
+  it("should GET /api/skills/available", async () => {
+    const skills = {
+      skills: [{ id: "s2", name: "search", description: "Web search", category: "tools" }],
+    };
+    mockFetch.mockResolvedValue(mockJsonResponse(skills));
+
+    const result = await api.getAvailableSkills();
+
+    expect(mockFetch).toHaveBeenCalledWith("/api/skills/available", {
+      headers: { "Content-Type": "application/json" },
+    });
+    expect(result).toEqual(skills);
+  });
+});
+
+describe("api.installSkill", () => {
+  it("should POST /api/skills/install with id", async () => {
+    mockFetch.mockResolvedValue(mockJsonResponse({}));
+
+    await api.installSkill("s2");
+
+    expect(mockFetch).toHaveBeenCalledWith("/api/skills/install", {
+      method: "POST",
+      body: JSON.stringify({ id: "s2" }),
+      headers: { "Content-Type": "application/json" },
+    });
+  });
+});
+
+describe("api.uninstallSkill", () => {
+  it("should POST /api/skills/uninstall with id", async () => {
+    mockFetch.mockResolvedValue(mockJsonResponse({}));
+
+    await api.uninstallSkill("s1");
+
+    expect(mockFetch).toHaveBeenCalledWith("/api/skills/uninstall", {
+      method: "POST",
+      body: JSON.stringify({ id: "s1" }),
+      headers: { "Content-Type": "application/json" },
+    });
+  });
+});
+
+describe("api.enableSkill", () => {
+  it("should POST /api/skills/:id/enable", async () => {
+    mockFetch.mockResolvedValue(mockJsonResponse({}));
+
+    await api.enableSkill("s1");
+
+    expect(mockFetch).toHaveBeenCalledWith("/api/skills/s1/enable", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+  });
+
+  it("should encode special characters in skill id", async () => {
+    mockFetch.mockResolvedValue(mockJsonResponse({}));
+
+    await api.enableSkill("skill with spaces");
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/skills/skill%20with%20spaces/enable",
+      expect.any(Object),
+    );
+  });
+});
+
+describe("api.disableSkill", () => {
+  it("should POST /api/skills/:id/disable", async () => {
+    mockFetch.mockResolvedValue(mockJsonResponse({}));
+
+    await api.disableSkill("s1");
+
+    expect(mockFetch).toHaveBeenCalledWith("/api/skills/s1/disable", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+  });
+});
+
 describe("error handling", () => {
   it("should throw on non-ok response with error message from body", async () => {
     mockFetch.mockResolvedValue(
