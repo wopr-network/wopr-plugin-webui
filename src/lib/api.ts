@@ -87,6 +87,23 @@ export interface InjectResponse {
   cost: number;
 }
 
+export interface InstalledSkill {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  version?: string;
+  category?: string;
+}
+
+export interface AvailableSkill {
+  id: string;
+  name: string;
+  description: string;
+  category?: string;
+  version?: string;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -210,6 +227,41 @@ export const api = {
   async resetConfig(): Promise<void> {
     await request("/config", {
       method: "DELETE",
+    });
+  },
+
+  // Skills
+  async getSkills(): Promise<{ skills: InstalledSkill[] }> {
+    return request("/skills");
+  },
+
+  async getAvailableSkills(): Promise<{ skills: AvailableSkill[] }> {
+    return request("/skills/available");
+  },
+
+  async installSkill(id: string): Promise<void> {
+    await request("/skills/install", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    });
+  },
+
+  async uninstallSkill(id: string): Promise<void> {
+    await request("/skills/uninstall", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    });
+  },
+
+  async enableSkill(id: string): Promise<void> {
+    await request(`/skills/${encodeURIComponent(id)}/enable`, {
+      method: "POST",
+    });
+  },
+
+  async disableSkill(id: string): Promise<void> {
+    await request(`/skills/${encodeURIComponent(id)}/disable`, {
+      method: "POST",
     });
   },
 };
