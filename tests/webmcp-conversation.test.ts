@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { type AuthContext, WebMCPRegistry } from "../src/lib/webmcp";
+import { type ModelContextClient, WebMCPRegistry } from "../src/lib/webmcp";
 import { registerConversationTools } from "../src/lib/webmcp-conversation";
 
 // Mock global fetch
@@ -13,6 +13,10 @@ function mockJsonResponse(data: unknown, ok = true, status = 200) {
 		json: vi.fn().mockResolvedValue(data),
 	};
 }
+
+const mockClient: ModelContextClient = {
+	requestUserInteraction: vi.fn(),
+};
 
 /** Retrieve a tool from the registry, throwing if it is missing. */
 function getTool(registry: WebMCPRegistry, name: string) {
@@ -55,9 +59,9 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "sendMessage");
-			const result = await tool.handler(
+			const result = await tool.execute(
 				{ text: "Hello", sessionId: "my-session" },
-				{},
+				mockClient,
 			);
 
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -75,7 +79,7 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "sendMessage");
-			await tool.handler({ text: "Hi" }, {});
+			await tool.execute({ text: "Hi" }, mockClient);
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/sessions/default/inject",
@@ -88,18 +92,18 @@ describe("registerConversationTools", () => {
 
 			const tool = getTool(registry, "sendMessage");
 
-			await expect(tool.handler({}, {})).rejects.toThrow(
+			await expect(tool.execute({}, mockClient)).rejects.toThrow(
 				"Parameter 'text' is required",
 			);
 		});
 
-		it("should include bearer token when auth.token is present", async () => {
+		it("should include bearer token when auth has token set on registry", async () => {
 			mockFetch.mockResolvedValue(mockJsonResponse({ response: "ok" }));
+			registry.setAuthContext({ token: "my-secret-token" });
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "sendMessage");
-			const auth: AuthContext = { token: "my-secret-token" };
-			await tool.handler({ text: "Hi" }, auth);
+			await tool.execute({ text: "Hi" }, mockClient);
 
 			const headers = mockFetch.mock.calls[0][1].headers;
 			expect(headers.Authorization).toBe("Bearer my-secret-token");
@@ -110,7 +114,7 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "sendMessage");
-			await tool.handler({ text: "Hi" }, {});
+			await tool.execute({ text: "Hi" }, mockClient);
 
 			const headers = mockFetch.mock.calls[0][1].headers;
 			expect(headers.Authorization).toBeUndefined();
@@ -121,12 +125,21 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "sendMessage");
-			await tool.handler({ text: "Hi", sessionId: "session with spaces" }, {});
+			await tool.execute(
+				{ text: "Hi", sessionId: "session with spaces" },
+				mockClient,
+			);
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/sessions/session%20with%20spaces/inject",
 				expect.any(Object),
 			);
+		});
+
+		it("should have readOnlyHint set to false", () => {
+			registerConversationTools(registry, API_BASE);
+			const tool = getTool(registry, "sendMessage");
+			expect(tool.annotations?.readOnlyHint).toBe(false);
 		});
 	});
 
@@ -137,7 +150,10 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "getConversation");
-			const result = await tool.handler({ sessionId: "my-session" }, {});
+			const result = await tool.execute(
+				{ sessionId: "my-session" },
+				mockClient,
+			);
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/sessions/my-session/history",
@@ -151,7 +167,7 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "getConversation");
-			await tool.handler({ sessionId: "s1", limit: 10 }, {});
+			await tool.execute({ sessionId: "s1", limit: 10 }, mockClient);
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/sessions/s1/history?limit=10",
@@ -164,20 +180,27 @@ describe("registerConversationTools", () => {
 
 			const tool = getTool(registry, "getConversation");
 
-			await expect(tool.handler({}, {})).rejects.toThrow(
+			await expect(tool.execute({}, mockClient)).rejects.toThrow(
 				"Parameter 'sessionId' is required",
 			);
 		});
 
 		it("should include bearer token in auth header", async () => {
 			mockFetch.mockResolvedValue(mockJsonResponse({ messages: [] }));
+			registry.setAuthContext({ token: "tok-123" });
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "getConversation");
-			await tool.handler({ sessionId: "s1" }, { token: "tok-123" });
+			await tool.execute({ sessionId: "s1" }, mockClient);
 
 			const headers = mockFetch.mock.calls[0][1].headers;
 			expect(headers.Authorization).toBe("Bearer tok-123");
+		});
+
+		it("should have readOnlyHint set to true", () => {
+			registerConversationTools(registry, API_BASE);
+			const tool = getTool(registry, "getConversation");
+			expect(tool.annotations?.readOnlyHint).toBe(true);
 		});
 	});
 
@@ -188,7 +211,7 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "listSessions");
-			const result = await tool.handler({}, {});
+			const result = await tool.execute({}, mockClient);
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/sessions",
@@ -199,13 +222,20 @@ describe("registerConversationTools", () => {
 
 		it("should include bearer token in auth header", async () => {
 			mockFetch.mockResolvedValue(mockJsonResponse({ sessions: [] }));
+			registry.setAuthContext({ token: "tok-abc" });
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "listSessions");
-			await tool.handler({}, { token: "tok-abc" });
+			await tool.execute({}, mockClient);
 
 			const headers = mockFetch.mock.calls[0][1].headers;
 			expect(headers.Authorization).toBe("Bearer tok-abc");
+		});
+
+		it("should have readOnlyHint set to true", () => {
+			registerConversationTools(registry, API_BASE);
+			const tool = getTool(registry, "listSessions");
+			expect(tool.annotations?.readOnlyHint).toBe(true);
 		});
 	});
 
@@ -216,7 +246,7 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "newSession");
-			const result = await tool.handler({}, {});
+			const result = await tool.execute({}, mockClient);
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/sessions",
@@ -233,7 +263,7 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "newSession");
-			await tool.handler({ model: "claude-sonnet-4-5-20250929" }, {});
+			await tool.execute({ model: "claude-sonnet-4-5-20250929" }, mockClient);
 
 			const body = JSON.parse(mockFetch.mock.calls[0][1].body);
 			expect(body.context).toBe("Use model: claude-sonnet-4-5-20250929");
@@ -241,13 +271,20 @@ describe("registerConversationTools", () => {
 
 		it("should include bearer token in auth header", async () => {
 			mockFetch.mockResolvedValue(mockJsonResponse({ name: "s1" }));
+			registry.setAuthContext({ token: "tok-xyz" });
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "newSession");
-			await tool.handler({}, { token: "tok-xyz" });
+			await tool.execute({}, mockClient);
 
 			const headers = mockFetch.mock.calls[0][1].headers;
 			expect(headers.Authorization).toBe("Bearer tok-xyz");
+		});
+
+		it("should have readOnlyHint set to false", () => {
+			registerConversationTools(registry, API_BASE);
+			const tool = getTool(registry, "newSession");
+			expect(tool.annotations?.readOnlyHint).toBe(false);
 		});
 	});
 
@@ -262,7 +299,7 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "getStatus");
-			const result = await tool.handler({}, {});
+			const result = await tool.execute({}, mockClient);
 
 			expect(mockFetch).toHaveBeenCalledWith("/api/status", expect.any(Object));
 			expect(result).toEqual(status);
@@ -270,13 +307,20 @@ describe("registerConversationTools", () => {
 
 		it("should include bearer token in auth header", async () => {
 			mockFetch.mockResolvedValue(mockJsonResponse({ healthy: true }));
+			registry.setAuthContext({ token: "tok-status" });
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "getStatus");
-			await tool.handler({}, { token: "tok-status" });
+			await tool.execute({}, mockClient);
 
 			const headers = mockFetch.mock.calls[0][1].headers;
 			expect(headers.Authorization).toBe("Bearer tok-status");
+		});
+
+		it("should have readOnlyHint set to true", () => {
+			registerConversationTools(registry, API_BASE);
+			const tool = getTool(registry, "getStatus");
+			expect(tool.annotations?.readOnlyHint).toBe(true);
 		});
 	});
 
@@ -289,7 +333,9 @@ describe("registerConversationTools", () => {
 
 			const tool = getTool(registry, "listSessions");
 
-			await expect(tool.handler({}, {})).rejects.toThrow("Session not found");
+			await expect(tool.execute({}, mockClient)).rejects.toThrow(
+				"Session not found",
+			);
 		});
 
 		it("should throw generic error when body has no error field", async () => {
@@ -298,7 +344,7 @@ describe("registerConversationTools", () => {
 
 			const tool = getTool(registry, "getStatus");
 
-			await expect(tool.handler({}, {})).rejects.toThrow(
+			await expect(tool.execute({}, mockClient)).rejects.toThrow(
 				"Request failed (500)",
 			);
 		});
@@ -313,51 +359,79 @@ describe("registerConversationTools", () => {
 
 			const tool = getTool(registry, "getStatus");
 
-			await expect(tool.handler({}, {})).rejects.toThrow("Request failed");
+			await expect(tool.execute({}, mockClient)).rejects.toThrow(
+				"Request failed",
+			);
 		});
 	});
 
-	describe("tool metadata", () => {
-		it("sendMessage should have correct parameter definitions", () => {
+	describe("tool metadata (inputSchema and annotations)", () => {
+		it("sendMessage should have correct inputSchema", () => {
 			registerConversationTools(registry, API_BASE);
 			const tool = getTool(registry, "sendMessage");
 
-			expect(tool.parameters?.text?.type).toBe("string");
-			expect(tool.parameters?.text?.required).toBe(true);
-			expect(tool.parameters?.sessionId?.type).toBe("string");
-			expect(tool.parameters?.sessionId?.required).toBe(false);
+			expect(tool.inputSchema).toEqual({
+				type: "object",
+				properties: {
+					text: { type: "string", description: "The message text to send" },
+					sessionId: {
+						type: "string",
+						description:
+							"Session name to send the message in. If omitted, uses the default session.",
+					},
+				},
+				required: ["text"],
+			});
 		});
 
-		it("getConversation should have correct parameter definitions", () => {
+		it("getConversation should have correct inputSchema", () => {
 			registerConversationTools(registry, API_BASE);
 			const tool = getTool(registry, "getConversation");
 
-			expect(tool.parameters?.sessionId?.type).toBe("string");
-			expect(tool.parameters?.sessionId?.required).toBe(true);
-			expect(tool.parameters?.limit?.type).toBe("number");
-			expect(tool.parameters?.limit?.required).toBe(false);
+			expect(tool.inputSchema).toEqual({
+				type: "object",
+				properties: {
+					sessionId: {
+						type: "string",
+						description: "Session name to retrieve history for",
+					},
+					limit: {
+						type: "number",
+						description: "Maximum number of messages to return. Omit for all.",
+					},
+				},
+				required: ["sessionId"],
+			});
 		});
 
-		it("listSessions should have empty parameters", () => {
+		it("listSessions should have empty properties inputSchema", () => {
 			registerConversationTools(registry, API_BASE);
 			const tool = getTool(registry, "listSessions");
 
-			expect(tool.parameters).toEqual({});
+			expect(tool.inputSchema).toEqual({ type: "object", properties: {} });
 		});
 
-		it("newSession should have optional model parameter", () => {
+		it("newSession should have optional model in inputSchema", () => {
 			registerConversationTools(registry, API_BASE);
 			const tool = getTool(registry, "newSession");
 
-			expect(tool.parameters?.model?.type).toBe("string");
-			expect(tool.parameters?.model?.required).toBe(false);
+			expect(tool.inputSchema).toEqual({
+				type: "object",
+				properties: {
+					model: {
+						type: "string",
+						description:
+							"Model identifier to use for this session (e.g. 'claude-sonnet-4-5-20250929'). Omit for default.",
+					},
+				},
+			});
 		});
 
-		it("getStatus should have empty parameters", () => {
+		it("getStatus should have empty properties inputSchema", () => {
 			registerConversationTools(registry, API_BASE);
 			const tool = getTool(registry, "getStatus");
 
-			expect(tool.parameters).toEqual({});
+			expect(tool.inputSchema).toEqual({ type: "object", properties: {} });
 		});
 	});
 
@@ -367,7 +441,7 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, "http://localhost:7437/api");
 
 			const tool = getTool(registry, "listSessions");
-			await tool.handler({}, {});
+			await tool.execute({}, mockClient);
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				"http://localhost:7437/api/sessions",

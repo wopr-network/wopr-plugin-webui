@@ -2,60 +2,70 @@
  * WebMCP Registration Framework
  *
  * Provides a registry for plugins to register browser-side MCP tools
- * via the navigator.modelContext API. Supports manifest-driven declaration
- * and dynamic registration/unregistration on plugin load/unload.
+ * via the navigator.modelContext API. Aligned with the W3C WebMCP spec:
+ * https://webmachinelearning.github.io/webmcp/
  */
 
-// -- Types --
+// -- W3C WebMCP spec types --
 
-export interface ParameterSchema {
-	type: string;
-	description?: string;
-	required?: boolean;
-	enum?: string[];
-	default?: unknown;
+/** JSON Schema object describing tool input */
+export type InputSchema = Record<string, unknown>;
+
+/** Hints about a tool's behavior */
+export interface ToolAnnotations {
+	readOnlyHint?: boolean;
+}
+
+/**
+ * Client passed to tool execute callbacks.
+ * Provides requestUserInteraction() for consent flows.
+ */
+export interface ModelContextClient {
+	requestUserInteraction(
+		callback: (element: Element) => Promise<unknown>,
+	): Promise<unknown>;
+}
+
+/** Callback signature for tool execution per W3C spec */
+export type ToolExecuteCallback = (
+	input: Record<string, unknown>,
+	client: ModelContextClient,
+) => Promise<unknown>;
+
+/** A tool registered via navigator.modelContext.registerTool() */
+export interface ModelContextTool {
+	name: string;
+	description: string;
+	inputSchema?: InputSchema;
+	execute: ToolExecuteCallback;
+	annotations?: ToolAnnotations;
 }
 
 export interface AuthContext {
 	userId?: string;
 	sessionId?: string;
 	roles?: string[];
+	token?: string;
 	[key: string]: unknown;
 }
 
-export type WebMCPHandler = (
-	params: Record<string, unknown>,
-	auth: AuthContext,
-) => unknown | Promise<unknown>;
-
-export interface WebMCPTool {
-	name: string;
-	description: string;
-	parameters?: Record<string, ParameterSchema>;
-	handler: WebMCPHandler;
+/** Options for provideContext() */
+export interface ModelContextOptions {
+	tools?: ModelContextTool[];
 }
 
-export interface WebMCPToolDeclaration {
-	name: string;
-	description: string;
-	parameters?: Record<string, ParameterSchema>;
-}
+// -- Navigator type augmentation matching the WebIDL --
 
-// -- Navigator type augmentation for modelContext --
-
-interface ModelContextAPI {
-	registerTool(tool: {
-		name: string;
-		description: string;
-		parameters?: Record<string, ParameterSchema>;
-		handler: (params: Record<string, unknown>) => unknown | Promise<unknown>;
-	}): void;
+interface ModelContext {
+	provideContext(options?: ModelContextOptions): void;
+	clearContext(): void;
+	registerTool(tool: ModelContextTool): void;
 	unregisterTool(name: string): void;
 }
 
-function getModelContext(): ModelContextAPI | undefined {
+function getModelContext(): ModelContext | undefined {
 	const nav = globalThis.navigator as
-		| (Navigator & { modelContext?: ModelContextAPI })
+		| (Navigator & { modelContext?: ModelContext })
 		| undefined;
 	if (
 		nav?.modelContext &&
@@ -68,15 +78,22 @@ function getModelContext(): ModelContextAPI | undefined {
 
 // -- Plugin interfaces for manifest-driven registration --
 
+export interface WebMCPToolDeclaration {
+	name: string;
+	description: string;
+	inputSchema?: InputSchema;
+	annotations?: ToolAnnotations;
+}
+
 export interface WebMCPPlugin {
 	getManifest(): { webmcpTools?: WebMCPToolDeclaration[] };
-	getWebMCPHandlers?(): Record<string, WebMCPHandler>;
+	getWebMCPHandlers?(): Record<string, ToolExecuteCallback>;
 }
 
 // -- Registry --
 
 export class WebMCPRegistry {
-	private tools: Map<string, WebMCPTool> = new Map();
+	private tools: Map<string, ModelContextTool> = new Map();
 	private authContext: AuthContext = {};
 
 	/** Check whether the browser supports navigator.modelContext */
@@ -84,7 +101,7 @@ export class WebMCPRegistry {
 		return getModelContext() !== undefined;
 	}
 
-	/** Set the auth context that will be passed to all tool handlers */
+	/** Set the auth context that will be injected into tool execute wrappers */
 	setAuthContext(auth: AuthContext): void {
 		this.authContext = { ...auth };
 	}
@@ -94,16 +111,22 @@ export class WebMCPRegistry {
 		return { ...this.authContext };
 	}
 
-	/** Register a single WebMCP tool */
-	register(tool: WebMCPTool): void {
+	/**
+	 * Register a single WebMCP tool.
+	 *
+	 * The user-provided execute callback receives (input, client) per the spec.
+	 * Auth is injected internally by wrapping the callback.
+	 */
+	register(tool: ModelContextTool): void {
 		const mc = getModelContext();
 		if (mc) {
 			mc.registerTool({
 				name: tool.name,
 				description: tool.description,
-				parameters: tool.parameters,
-				handler: (params: Record<string, unknown>) =>
-					tool.handler(params, this.authContext),
+				inputSchema: tool.inputSchema,
+				execute: (input: Record<string, unknown>, client: ModelContextClient) =>
+					tool.execute(input, client),
+				annotations: tool.annotations,
 			});
 		}
 		this.tools.set(tool.name, tool);
@@ -119,7 +142,7 @@ export class WebMCPRegistry {
 	}
 
 	/** Get a registered tool by name */
-	get(name: string): WebMCPTool | undefined {
+	get(name: string): ModelContextTool | undefined {
 		return this.tools.get(name);
 	}
 
@@ -158,15 +181,16 @@ export class WebMCPRegistry {
 		const handlers = plugin.getWebMCPHandlers?.() ?? {};
 
 		for (const decl of declarations) {
-			const handler = handlers[decl.name];
-			if (typeof handler !== "function") {
+			const execute = handlers[decl.name];
+			if (typeof execute !== "function") {
 				continue;
 			}
 			this.register({
 				name: decl.name,
 				description: decl.description,
-				parameters: decl.parameters,
-				handler,
+				inputSchema: decl.inputSchema,
+				execute,
+				annotations: decl.annotations,
 			});
 		}
 	}

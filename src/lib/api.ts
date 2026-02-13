@@ -96,7 +96,8 @@ export interface WebUIManifest {
 export interface WebMCPToolDeclaration {
 	name: string;
 	description: string;
-	parameters?: Record<string, { type: string; description?: string; required?: boolean; enum?: string[]; default?: unknown }>;
+	inputSchema?: Record<string, unknown>;
+	annotations?: { readOnlyHint?: boolean };
 }
 
 export interface PluginManifestSummary {
@@ -335,17 +336,29 @@ export const api = {
 	},
 
 	// Poll a plugin endpoint (status/metrics)
-	async pollPluginEndpoint(pluginName: string, endpoint: string): Promise<unknown> {
+	async pollPluginEndpoint(
+		pluginName: string,
+		endpoint: string,
+	): Promise<unknown> {
 		const normalized = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-		return request(`/plugins/${encodeURIComponent(pluginName)}/proxy${normalized}`);
+		return request(
+			`/plugins/${encodeURIComponent(pluginName)}/proxy${normalized}`,
+		);
 	},
 
 	// Set a plugin config value
-	async setPluginConfigValue(pluginName: string, key: string, value: unknown): Promise<void> {
-		await request(`/plugins/${encodeURIComponent(pluginName)}/config/${encodeURIComponent(key)}`, {
-			method: "PUT",
-			body: JSON.stringify({ value }),
-		});
+	async setPluginConfigValue(
+		pluginName: string,
+		key: string,
+		value: unknown,
+	): Promise<void> {
+		await request(
+			`/plugins/${encodeURIComponent(pluginName)}/config/${encodeURIComponent(key)}`,
+			{
+				method: "PUT",
+				body: JSON.stringify({ value }),
+			},
+		);
 	},
 
 	// Web UI Extensions
