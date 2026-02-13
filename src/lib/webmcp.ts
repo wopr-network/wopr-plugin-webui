@@ -115,7 +115,7 @@ export class WebMCPRegistry {
 	 * Register a single WebMCP tool.
 	 *
 	 * The user-provided execute callback receives (input, client) per the spec.
-	 * Auth is injected internally by wrapping the callback.
+	 * Auth is available via registry.getAuthContext() inside execute callbacks.
 	 */
 	register(tool: ModelContextTool): void {
 		const mc = getModelContext();
