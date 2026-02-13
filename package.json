@@ -3,7 +3,7 @@
     "@kobalte/core": "^0.13.0",
     "solid-js": "^1.9.0"
   },
-  "description": "Web UI plugin for WOPR - React-based dashboard for sessions, plugins, and configuration",
+  "description": "Web UI plugin for WOPR - SolidJS-based dashboard for sessions, plugins, and configuration",
   "devDependencies": {
     "@biomejs/biome": "^2.3.14",
     "autoprefixer": "^10.4.0",
