@@ -1,7 +1,7 @@
 /**
  * WOPR Web UI Plugin
  *
- * Serves the React-based web dashboard for WOPR.
+ * Serves the SolidJS-based web dashboard for WOPR.
  * Built with SolidJS, TailwindCSS, and Vite.
  */
 
