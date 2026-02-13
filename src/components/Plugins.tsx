@@ -301,7 +301,7 @@ const Plugins: Component = () => {
 												</div>
 											) : field.type === "select" ? (
 												<select
-													value={configValues()[key] ?? field.default ?? ""}
+													value={(configValues()[key] ?? field.default ?? "") as string}
 													onChange={(e) =>
 														updateConfigValue(key, e.currentTarget.value)
 													}

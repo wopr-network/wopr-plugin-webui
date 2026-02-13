@@ -195,11 +195,11 @@ export function bindPluginLifecycle(
 		on(event: string, handler: (...args: unknown[]) => void): void;
 	},
 ): void {
-	eventBus.on("plugin:loaded", (plugin: WebMCPPlugin) => {
-		registry.registerPlugin(plugin);
+	eventBus.on("plugin:loaded", (...args: unknown[]) => {
+		registry.registerPlugin(args[0] as WebMCPPlugin);
 	});
 
-	eventBus.on("plugin:unloaded", (plugin: WebMCPPlugin) => {
-		registry.unregisterPlugin(plugin);
+	eventBus.on("plugin:unloaded", (...args: unknown[]) => {
+		registry.unregisterPlugin(args[0] as WebMCPPlugin);
 	});
 }
