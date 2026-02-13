@@ -93,6 +93,12 @@ export interface WebUIManifest {
 	routes?: WebUIRoute[];
 }
 
+export interface WebMCPToolDeclaration {
+	name: string;
+	description: string;
+	parameters?: Record<string, { type: string; description?: string; required?: boolean; enum?: string[]; default?: unknown }>;
+}
+
 export interface PluginManifestSummary {
 	name: string;
 	version: string;
@@ -109,6 +115,7 @@ export interface PluginManifestSummary {
 		healthIntervalMs?: number;
 	};
 	webui?: WebUIManifest;
+	webmcpTools?: WebMCPToolDeclaration[];
 }
 
 export interface ConfigFieldDef {
