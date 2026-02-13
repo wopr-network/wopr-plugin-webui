@@ -98,13 +98,12 @@ export class WebMCPRegistry {
 	register(tool: WebMCPTool): void {
 		const mc = getModelContext();
 		if (mc) {
-			const auth = this.authContext;
 			mc.registerTool({
 				name: tool.name,
 				description: tool.description,
 				parameters: tool.parameters,
 				handler: (params: Record<string, unknown>) =>
-					tool.handler(params, auth),
+					tool.handler(params, this.authContext),
 			});
 		}
 		this.tools.set(tool.name, tool);

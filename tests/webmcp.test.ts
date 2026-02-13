@@ -236,22 +236,22 @@ describe("WebMCPRegistry", () => {
 			);
 		});
 
-		it("should use the auth context at registration time", () => {
+		it("should use the current auth context at call time, not registration time", () => {
 			const mc = installModelContext();
 			const handler = vi.fn();
 
 			registry.setAuthContext({ userId: "before" });
 			registry.register(makeTool({ handler }));
 
-			// Change auth after registration -- the captured reference is the
-			// registry's authContext object, so handler sees current state at call time
+			// Change auth after registration -- the closure references the
+			// registry's authContext property, so handler sees current state at call time
 			registry.setAuthContext({ userId: "after" });
 
 			const registeredHandler = mc.registerTool.mock.calls[0][0].handler;
 			registeredHandler({});
 
-			// Since setAuthContext replaces the object, the closure captured the old ref
-			expect(handler).toHaveBeenCalledWith({}, { userId: "before" });
+			// Handler should see the updated auth context, not the stale one
+			expect(handler).toHaveBeenCalledWith({}, { userId: "after" });
 		});
 	});
 
