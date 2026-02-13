@@ -1,24 +1,32 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	WebMCPRegistry,
 	bindPluginLifecycle,
-	type WebMCPTool,
+	type ModelContextClient,
+	type ModelContextTool,
+	type ToolExecuteCallback,
 	type WebMCPPlugin,
-	type AuthContext,
+	WebMCPRegistry,
 } from "../src/lib/webmcp";
 
-// Helper: set up a mock navigator.modelContext
+// Stub navigator.modelContext
 function installModelContext() {
+	const registered = new Map<string, ModelContextTool>();
 	const mc = {
-		registerTool: vi.fn(),
-		unregisterTool: vi.fn(),
+		provideContext: vi.fn(),
+		clearContext: vi.fn(),
+		registerTool: vi.fn((tool: ModelContextTool) => {
+			registered.set(tool.name, tool);
+		}),
+		unregisterTool: vi.fn((name: string) => {
+			registered.delete(name);
+		}),
 	};
 	Object.defineProperty(globalThis, "navigator", {
 		value: { modelContext: mc },
 		writable: true,
 		configurable: true,
 	});
-	return mc;
+	return { mc, registered };
 }
 
 function removeModelContext() {
@@ -29,24 +37,33 @@ function removeModelContext() {
 	});
 }
 
-function makeTool(overrides: Partial<WebMCPTool> = {}): WebMCPTool {
+function makeTool(overrides: Partial<ModelContextTool> = {}): ModelContextTool {
 	return {
 		name: "test-tool",
 		description: "A test tool",
-		handler: vi.fn().mockReturnValue("result"),
+		execute: vi.fn().mockResolvedValue("result"),
 		...overrides,
 	};
 }
 
 function makePlugin(
-	tools: { name: string; description: string; parameters?: Record<string, any> }[] = [],
-	handlers: Record<string, (...args: any[]) => any> = {},
+	tools: {
+		name: string;
+		description: string;
+		inputSchema?: Record<string, unknown>;
+		annotations?: { readOnlyHint?: boolean };
+	}[] = [],
+	handlers: Record<string, ToolExecuteCallback> = {},
 ): WebMCPPlugin {
 	return {
 		getManifest: () => ({ webmcpTools: tools }),
 		getWebMCPHandlers: () => handlers,
 	};
 }
+
+const mockClient: ModelContextClient = {
+	requestUserInteraction: vi.fn(),
+};
 
 // -- Tests --
 
@@ -97,9 +114,14 @@ describe("WebMCPRegistry", () => {
 		});
 
 		it("should call navigator.modelContext.registerTool when supported", () => {
-			const mc = installModelContext();
+			const { mc } = installModelContext();
 			const tool = makeTool({
-				parameters: { query: { type: "string", description: "Search query" } },
+				inputSchema: {
+					type: "object",
+					properties: { query: { type: "string" } },
+					required: ["query"],
+				},
+				annotations: { readOnlyHint: true },
 			});
 
 			registry.register(tool);
@@ -108,10 +130,13 @@ describe("WebMCPRegistry", () => {
 			const registered = mc.registerTool.mock.calls[0][0];
 			expect(registered.name).toBe("test-tool");
 			expect(registered.description).toBe("A test tool");
-			expect(registered.parameters).toEqual({
-				query: { type: "string", description: "Search query" },
+			expect(registered.inputSchema).toEqual({
+				type: "object",
+				properties: { query: { type: "string" } },
+				required: ["query"],
 			});
-			expect(typeof registered.handler).toBe("function");
+			expect(registered.annotations).toEqual({ readOnlyHint: true });
+			expect(typeof registered.execute).toBe("function");
 		});
 
 		it("should not call navigator.modelContext.registerTool when unsupported", () => {
@@ -123,14 +148,25 @@ describe("WebMCPRegistry", () => {
 		});
 
 		it("should overwrite an existing tool with the same name", () => {
-			const tool1 = makeTool({ handler: vi.fn() });
-			const tool2 = makeTool({ description: "updated", handler: vi.fn() });
+			const tool1 = makeTool({ execute: vi.fn() });
+			const tool2 = makeTool({ description: "updated", execute: vi.fn() });
 
 			registry.register(tool1);
 			registry.register(tool2);
 
 			expect(registry.size).toBe(1);
 			expect(registry.get("test-tool")?.description).toBe("updated");
+		});
+
+		it("should wrap execute callback to delegate to the original", async () => {
+			const { mc } = installModelContext();
+			const executeFn = vi.fn().mockResolvedValue({ ok: true });
+			registry.register(makeTool({ execute: executeFn }));
+
+			const passedTool = mc.registerTool.mock.calls[0][0];
+			const result = await passedTool.execute({ a: 1 }, mockClient);
+			expect(executeFn).toHaveBeenCalledWith({ a: 1 }, mockClient);
+			expect(result).toEqual({ ok: true });
 		});
 	});
 
@@ -145,7 +181,7 @@ describe("WebMCPRegistry", () => {
 		});
 
 		it("should call navigator.modelContext.unregisterTool when supported", () => {
-			const mc = installModelContext();
+			const { mc } = installModelContext();
 			registry.register(makeTool());
 
 			registry.unregister("test-tool");
@@ -189,7 +225,7 @@ describe("WebMCPRegistry", () => {
 		});
 
 		it("should call unregisterTool for each tool when modelContext is available", () => {
-			const mc = installModelContext();
+			const { mc } = installModelContext();
 			registry.register(makeTool({ name: "a" }));
 			registry.register(makeTool({ name: "b" }));
 
@@ -206,10 +242,17 @@ describe("WebMCPRegistry", () => {
 		});
 
 		it("should set and return auth context", () => {
-			const auth: AuthContext = { userId: "u1", sessionId: "s1", roles: ["admin"] };
-			registry.setAuthContext(auth);
+			registry.setAuthContext({
+				userId: "u1",
+				sessionId: "s1",
+				roles: ["admin"],
+			});
 
-			expect(registry.getAuthContext()).toEqual(auth);
+			expect(registry.getAuthContext()).toEqual({
+				userId: "u1",
+				sessionId: "s1",
+				roles: ["admin"],
+			});
 		});
 
 		it("should not expose internal reference via getAuthContext", () => {
@@ -219,55 +262,21 @@ describe("WebMCPRegistry", () => {
 
 			expect(registry.getAuthContext().userId).toBe("u1");
 		});
-
-		it("should pass auth context to tool handler via modelContext wrapper", () => {
-			const mc = installModelContext();
-			const handler = vi.fn();
-			registry.setAuthContext({ userId: "user-42", roles: ["viewer"] });
-			registry.register(makeTool({ handler }));
-
-			// Simulate browser calling the registered handler
-			const registeredHandler = mc.registerTool.mock.calls[0][0].handler;
-			registeredHandler({ query: "hello" });
-
-			expect(handler).toHaveBeenCalledWith(
-				{ query: "hello" },
-				{ userId: "user-42", roles: ["viewer"] },
-			);
-		});
-
-		it("should use the current auth context at call time, not registration time", () => {
-			const mc = installModelContext();
-			const handler = vi.fn();
-
-			registry.setAuthContext({ userId: "before" });
-			registry.register(makeTool({ handler }));
-
-			// Change auth after registration -- the closure references the
-			// registry's authContext property, so handler sees current state at call time
-			registry.setAuthContext({ userId: "after" });
-
-			const registeredHandler = mc.registerTool.mock.calls[0][0].handler;
-			registeredHandler({});
-
-			// Handler should see the updated auth context, not the stale one
-			expect(handler).toHaveBeenCalledWith({}, { userId: "after" });
-		});
 	});
 
 	describe("registerPlugin", () => {
 		it("should register tools from a plugin manifest with matching handlers", () => {
-			const handler = vi.fn();
+			const execute: ToolExecuteCallback = vi.fn().mockResolvedValue("ok");
 			const plugin = makePlugin(
 				[{ name: "search", description: "Search the web" }],
-				{ search: handler },
+				{ search: execute },
 			);
 
 			registry.registerPlugin(plugin);
 
 			expect(registry.size).toBe(1);
 			expect(registry.get("search")).toBeDefined();
-			expect(registry.get("search")?.handler).toBe(handler);
+			expect(registry.get("search")?.execute).toBe(execute);
 		});
 
 		it("should skip tools without a matching handler", () => {
@@ -318,17 +327,31 @@ describe("WebMCPRegistry", () => {
 			expect(registry.size).toBe(0);
 		});
 
-		it("should pass parameters from declaration to registered tool", () => {
-			const handler = vi.fn();
-			const params = { query: { type: "string", description: "Search query", required: true } };
+		it("should pass inputSchema and annotations from declaration to registered tool", () => {
+			const execute: ToolExecuteCallback = vi.fn();
+			const schema = {
+				type: "object",
+				properties: { query: { type: "string" } },
+				required: ["query"],
+			};
 			const plugin = makePlugin(
-				[{ name: "search", description: "Search", parameters: params }],
-				{ search: handler },
+				[
+					{
+						name: "search",
+						description: "Search",
+						inputSchema: schema,
+						annotations: { readOnlyHint: true },
+					},
+				],
+				{ search: execute },
 			);
 
 			registry.registerPlugin(plugin);
 
-			expect(registry.get("search")?.parameters).toEqual(params);
+			expect(registry.get("search")?.inputSchema).toEqual(schema);
+			expect(registry.get("search")?.annotations).toEqual({
+				readOnlyHint: true,
+			});
 		});
 	});
 
@@ -361,10 +384,9 @@ describe("WebMCPRegistry", () => {
 		it("should only remove tools declared by that plugin", () => {
 			registry.register(makeTool({ name: "independent-tool" }));
 
-			const plugin = makePlugin(
-				[{ name: "plugin-tool", description: "X" }],
-				{ "plugin-tool": vi.fn() },
-			);
+			const plugin = makePlugin([{ name: "plugin-tool", description: "X" }], {
+				"plugin-tool": vi.fn(),
+			});
 			registry.registerPlugin(plugin);
 			expect(registry.size).toBe(2);
 
@@ -447,14 +469,12 @@ describe("bindPluginLifecycle", () => {
 
 		bindPluginLifecycle(registry, eventBus);
 
-		const pluginA = makePlugin(
-			[{ name: "tool-a", description: "A" }],
-			{ "tool-a": vi.fn() },
-		);
-		const pluginB = makePlugin(
-			[{ name: "tool-b", description: "B" }],
-			{ "tool-b": vi.fn() },
-		);
+		const pluginA = makePlugin([{ name: "tool-a", description: "A" }], {
+			"tool-a": vi.fn(),
+		});
+		const pluginB = makePlugin([{ name: "tool-b", description: "B" }], {
+			"tool-b": vi.fn(),
+		});
 
 		for (const handler of listeners["plugin:loaded"] ?? []) {
 			handler(pluginA);

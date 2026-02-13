@@ -3,6 +3,8 @@
  *
  * Registers 5 tools on the WebMCP registry for AI agents to chat with
  * the WOPR bot and manage sessions from the browser.
+ *
+ * Uses the W3C WebMCP spec: inputSchema (JSON Schema), execute(input, client).
  */
 
 import type { AuthContext, WebMCPRegistry } from "./webmcp";
@@ -26,7 +28,7 @@ async function daemonRequest<T>(
 		...options?.headers,
 	};
 	if (auth.token) {
-		headers.Authorization = `Bearer ${auth.token as string}`;
+		headers.Authorization = `Bearer ${auth.token}`;
 	}
 	const res = await fetch(`${apiBase}${path}`, {
 		...options,
@@ -57,25 +59,25 @@ export function registerConversationTools(
 	registry.register({
 		name: "sendMessage",
 		description: "Send a message to the WOPR bot and return the full response.",
-		parameters: {
-			text: {
-				type: "string",
-				description: "The message text to send",
-				required: true,
+		inputSchema: {
+			type: "object",
+			properties: {
+				text: { type: "string", description: "The message text to send" },
+				sessionId: {
+					type: "string",
+					description:
+						"Session name to send the message in. If omitted, uses the default session.",
+				},
 			},
-			sessionId: {
-				type: "string",
-				description:
-					"Session name to send the message in. If omitted, uses the default session.",
-				required: false,
-			},
+			required: ["text"],
 		},
-		handler: async (params: Record<string, unknown>, auth: AuthContext) => {
-			const text = params.text as string;
+		execute: async (input) => {
+			const auth = registry.getAuthContext();
+			const text = input.text as string;
 			if (!text) {
 				throw new Error("Parameter 'text' is required");
 			}
-			const session = (params.sessionId as string) || "default";
+			const session = (input.sessionId as string) || "default";
 			return daemonRequest(
 				apiBase,
 				`/sessions/${encodeURIComponent(session)}/inject`,
@@ -86,71 +88,85 @@ export function registerConversationTools(
 				},
 			);
 		},
+		annotations: { readOnlyHint: false },
 	});
 
 	// 2. getConversation
 	registry.register({
 		name: "getConversation",
 		description: "Get the conversation history for a session.",
-		parameters: {
-			sessionId: {
-				type: "string",
-				description: "Session name to retrieve history for",
-				required: true,
+		inputSchema: {
+			type: "object",
+			properties: {
+				sessionId: {
+					type: "string",
+					description: "Session name to retrieve history for",
+				},
+				limit: {
+					type: "number",
+					description: "Maximum number of messages to return. Omit for all.",
+				},
 			},
-			limit: {
-				type: "number",
-				description: "Maximum number of messages to return. Omit for all.",
-				required: false,
-			},
+			required: ["sessionId"],
 		},
-		handler: async (params: Record<string, unknown>, auth: AuthContext) => {
-			const sessionId = params.sessionId as string;
+		execute: async (input) => {
+			const auth = registry.getAuthContext();
+			const sessionId = input.sessionId as string;
 			if (!sessionId) {
 				throw new Error("Parameter 'sessionId' is required");
 			}
-			const qs = params.limit ? `?limit=${encodeURIComponent(String(params.limit))}` : "";
+			const qs = input.limit !== undefined ? `?limit=${encodeURIComponent(String(input.limit))}` : "";
 			return daemonRequest(
 				apiBase,
 				`/sessions/${encodeURIComponent(sessionId)}/history${qs}`,
 				auth,
 			);
 		},
+		annotations: { readOnlyHint: true },
 	});
 
 	// 3. listSessions
 	registry.register({
 		name: "listSessions",
 		description: "List all chat sessions.",
-		parameters: {},
-		handler: async (_params: Record<string, unknown>, auth: AuthContext) => {
+		inputSchema: {
+			type: "object",
+			properties: {},
+		},
+		execute: async () => {
+			const auth = registry.getAuthContext();
 			return daemonRequest(apiBase, "/sessions", auth);
 		},
+		annotations: { readOnlyHint: true },
 	});
 
 	// 4. newSession
 	registry.register({
 		name: "newSession",
 		description: "Start a new chat session with an optional model override.",
-		parameters: {
-			model: {
-				type: "string",
-				description:
-					"Model identifier to use for this session (e.g. 'claude-sonnet-4-5-20250929'). Omit for default.",
-				required: false,
+		inputSchema: {
+			type: "object",
+			properties: {
+				model: {
+					type: "string",
+					description:
+						"Model identifier to use for this session (e.g. 'claude-sonnet-4-5-20250929'). Omit for default.",
+				},
 			},
 		},
-		handler: async (params: Record<string, unknown>, auth: AuthContext) => {
+		execute: async (input) => {
+			const auth = registry.getAuthContext();
 			const name = `session-${Date.now()}`;
 			const body: Record<string, unknown> = { name };
-			if (params.model) {
-				body.context = `Use model: ${params.model}`;
+			if (input.model) {
+				body.context = `Use model: ${input.model}`;
 			}
 			return daemonRequest(apiBase, "/sessions", auth, {
 				method: "POST",
 				body: JSON.stringify(body),
 			});
 		},
+		annotations: { readOnlyHint: false },
 	});
 
 	// 5. getStatus
@@ -158,9 +174,14 @@ export function registerConversationTools(
 		name: "getStatus",
 		description:
 			"Get instance health, loaded plugins, connected channels, and uptime.",
-		parameters: {},
-		handler: async (_params: Record<string, unknown>, auth: AuthContext) => {
+		inputSchema: {
+			type: "object",
+			properties: {},
+		},
+		execute: async () => {
+			const auth = registry.getAuthContext();
 			return daemonRequest(apiBase, "/status", auth);
 		},
+		annotations: { readOnlyHint: true },
 	});
 }
