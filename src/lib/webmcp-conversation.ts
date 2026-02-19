@@ -115,7 +115,10 @@ export function registerConversationTools(
 			if (!sessionId) {
 				throw new Error("Parameter 'sessionId' is required");
 			}
-			const qs = input.limit !== undefined ? `?limit=${encodeURIComponent(String(input.limit))}` : "";
+			const qs =
+				input.limit !== undefined
+					? `?limit=${encodeURIComponent(String(input.limit))}`
+					: "";
 			return daemonRequest(
 				apiBase,
 				`/sessions/${encodeURIComponent(sessionId)}/history${qs}`,
