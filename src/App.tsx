@@ -1,28 +1,28 @@
 import {
-	Component,
-	createSignal,
-	onMount,
-	onCleanup,
-	For,
-	Show,
-	lazy,
-	Suspense,
-	createResource,
+	type Component,
 	createMemo,
+	createResource,
+	createSignal,
+	For,
+	lazy,
+	onCleanup,
+	onMount,
+	Show,
+	Suspense,
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
+import PluginPanels from "./components/PluginPanels";
+import Plugins from "./components/Plugins";
+import Settings from "./components/Settings";
+import Skills from "./components/Skills";
 import {
 	api,
+	type PluginUiComponentProps,
 	type Session,
 	type StreamEvent,
-	type WebUiExtension,
 	type UiComponentExtension,
-	type PluginUiComponentProps,
+	type WebUiExtension,
 } from "./lib/api";
-import Settings from "./components/Settings";
-import Plugins from "./components/Plugins";
-import Skills from "./components/Skills";
-import PluginPanels from "./components/PluginPanels";
 
 // Cache for dynamically imported components
 const componentCache = new Map<string, any>();
@@ -79,7 +79,9 @@ const PluginComponent: Component<{
 };
 
 const App: Component = () => {
-	const [view, setView] = createSignal<"chat" | "settings" | "plugins" | "skills">("chat");
+	const [view, setView] = createSignal<
+		"chat" | "settings" | "plugins" | "skills"
+	>("chat");
 	const [sessions, setSessions] = createSignal<Session[]>([]);
 	const [selectedSession, setSelectedSession] = createSignal<string | null>(
 		null,

@@ -1,4 +1,4 @@
-import { Component, createSignal, onMount, For } from "solid-js";
+import { type Component, createSignal, For, onMount } from "solid-js";
 import { api, type WoprConfig } from "../lib/api";
 
 const Settings: Component = () => {

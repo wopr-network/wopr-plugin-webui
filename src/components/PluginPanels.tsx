@@ -113,7 +113,9 @@ const ConfigPanel: Component<{
 			setConfig(data);
 			return true;
 		} catch (err: unknown) {
-			setLoadError(err instanceof Error ? err.message : "Failed to load config");
+			setLoadError(
+				err instanceof Error ? err.message : "Failed to load config",
+			);
 			return false;
 		}
 	});
