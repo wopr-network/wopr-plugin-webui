@@ -1,6 +1,19 @@
 /**
  * WOPR API Client
  */
+import type {
+	PluginUiComponentProps,
+	StreamMessage,
+	UiComponentExtension,
+	WebUiExtension,
+} from "@wopr-network/plugin-types";
+
+export type {
+	PluginUiComponentProps,
+	StreamMessage,
+	UiComponentExtension,
+	WebUiExtension,
+};
 
 const API_BASE = "/api";
 
@@ -38,34 +51,12 @@ export interface Session {
 	context?: string;
 }
 
-export interface StreamMessage {
-	type: "text" | "tool_use" | "complete" | "error";
-	content: string;
-	toolName?: string;
-}
-
 export interface StreamEvent {
 	type: "stream" | "injection" | "connected" | "subscribed";
 	session?: string;
 	from?: string;
 	message: StreamMessage;
 	ts?: number;
-}
-
-export interface WebUiExtension {
-	id: string;
-	title: string;
-	url: string;
-	description?: string;
-	category?: string;
-}
-
-export interface UiComponentExtension {
-	id: string;
-	title: string;
-	moduleUrl: string;
-	slot: "sidebar" | "settings" | "statusbar" | "chat-header" | "chat-footer";
-	description?: string;
 }
 
 // --- Manifest-driven panel types ---
@@ -129,18 +120,6 @@ export interface ConfigFieldDef {
 	options?: { value: string; label: string }[];
 	description?: string;
 	secret?: boolean;
-}
-
-export interface PluginUiComponentProps {
-	api: {
-		getSessions: () => Promise<{ sessions: Session[] }>;
-		inject: (session: string, message: string) => Promise<InjectResponse>;
-		getConfig: () => Promise<WoprConfig>;
-		setConfigValue: (key: string, value: any) => Promise<void>;
-	};
-	currentSession?: string;
-	pluginConfig: any;
-	saveConfig: (config: any) => Promise<void>;
 }
 
 export interface InjectResponse {
