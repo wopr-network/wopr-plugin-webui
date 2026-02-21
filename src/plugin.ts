@@ -138,6 +138,9 @@ function startServer(pluginDir: string, port: number, host: string): http.Server
 		createReadStream(filePath).pipe(res);
 	});
 
+	httpServer.on("error", (err) => {
+		ctx?.log?.error("webui server error", { err });
+	});
 	httpServer.listen(port, host);
 	return httpServer;
 }
@@ -149,6 +152,7 @@ const plugin: WOPRPlugin = {
 	manifest,
 
 	async init(pluginContext: WOPRPluginContext) {
+		if (ctx !== null) return;
 		ctx = pluginContext;
 
 		// Register config schema

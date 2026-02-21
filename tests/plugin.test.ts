@@ -19,6 +19,7 @@ vi.mock("node:http", () => ({
 		createServer: vi.fn(() => ({
 			listen: vi.fn(),
 			close: vi.fn((cb: (err?: Error) => void) => cb()),
+			on: vi.fn(),
 		})),
 	},
 }));
