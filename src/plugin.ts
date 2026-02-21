@@ -170,6 +170,10 @@ const plugin: WOPRPlugin = {
 		if (!existsSync(distDir)) {
 			ctx.log.error("dist/ folder not found. Run 'npm run build:ui' first.");
 			ctx.log.info("The Web UI needs to be built before it can be served.");
+			// Clean up what we registered before bailing
+			ctx.unregisterConfigSchema("wopr-plugin-webui");
+			cleanups.length = 0;
+			ctx = null;
 			return;
 		}
 
