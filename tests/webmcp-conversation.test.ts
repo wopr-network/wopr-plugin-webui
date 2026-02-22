@@ -59,10 +59,7 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "sendMessage");
-			const result = await tool.execute(
-				{ text: "Hello", sessionId: "my-session" },
-				mockClient,
-			);
+			const result = await tool.execute({ text: "Hello", sessionId: "my-session" }, mockClient);
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/sessions/my-session/inject",
@@ -81,10 +78,7 @@ describe("registerConversationTools", () => {
 			const tool = getTool(registry, "sendMessage");
 			await tool.execute({ text: "Hi" }, mockClient);
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/sessions/default/inject",
-				expect.any(Object),
-			);
+			expect(mockFetch).toHaveBeenCalledWith("/api/sessions/default/inject", expect.any(Object));
 		});
 
 		it("should throw when text parameter is missing", async () => {
@@ -92,9 +86,7 @@ describe("registerConversationTools", () => {
 
 			const tool = getTool(registry, "sendMessage");
 
-			await expect(tool.execute({}, mockClient)).rejects.toThrow(
-				"Parameter 'text' is required",
-			);
+			await expect(tool.execute({}, mockClient)).rejects.toThrow("Parameter 'text' is required");
 		});
 
 		it("should include bearer token when auth has token set on registry", async () => {
@@ -125,15 +117,9 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "sendMessage");
-			await tool.execute(
-				{ text: "Hi", sessionId: "session with spaces" },
-				mockClient,
-			);
+			await tool.execute({ text: "Hi", sessionId: "session with spaces" }, mockClient);
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/sessions/session%20with%20spaces/inject",
-				expect.any(Object),
-			);
+			expect(mockFetch).toHaveBeenCalledWith("/api/sessions/session%20with%20spaces/inject", expect.any(Object));
 		});
 
 		it("should have readOnlyHint set to false", () => {
@@ -150,15 +136,9 @@ describe("registerConversationTools", () => {
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "getConversation");
-			const result = await tool.execute(
-				{ sessionId: "my-session" },
-				mockClient,
-			);
+			const result = await tool.execute({ sessionId: "my-session" }, mockClient);
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/sessions/my-session/history",
-				expect.any(Object),
-			);
+			expect(mockFetch).toHaveBeenCalledWith("/api/sessions/my-session/history", expect.any(Object));
 			expect(result).toEqual(history);
 		});
 
@@ -169,10 +149,7 @@ describe("registerConversationTools", () => {
 			const tool = getTool(registry, "getConversation");
 			await tool.execute({ sessionId: "s1", limit: 10 }, mockClient);
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/sessions/s1/history?limit=10",
-				expect.any(Object),
-			);
+			expect(mockFetch).toHaveBeenCalledWith("/api/sessions/s1/history?limit=10", expect.any(Object));
 		});
 
 		it("should throw when sessionId is missing", async () => {
@@ -180,9 +157,7 @@ describe("registerConversationTools", () => {
 
 			const tool = getTool(registry, "getConversation");
 
-			await expect(tool.execute({}, mockClient)).rejects.toThrow(
-				"Parameter 'sessionId' is required",
-			);
+			await expect(tool.execute({}, mockClient)).rejects.toThrow("Parameter 'sessionId' is required");
 		});
 
 		it("should include bearer token in auth header", async () => {
@@ -213,10 +188,7 @@ describe("registerConversationTools", () => {
 			const tool = getTool(registry, "listSessions");
 			const result = await tool.execute({}, mockClient);
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/sessions",
-				expect.any(Object),
-			);
+			expect(mockFetch).toHaveBeenCalledWith("/api/sessions", expect.any(Object));
 			expect(result).toEqual(sessions);
 		});
 
@@ -248,10 +220,7 @@ describe("registerConversationTools", () => {
 			const tool = getTool(registry, "newSession");
 			const result = await tool.execute({}, mockClient);
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/sessions",
-				expect.objectContaining({ method: "POST" }),
-			);
+			expect(mockFetch).toHaveBeenCalledWith("/api/sessions", expect.objectContaining({ method: "POST" }));
 			const body = JSON.parse(mockFetch.mock.calls[0][1].body);
 			expect(body.name).toMatch(/^session-\d+$/);
 			expect(body.context).toBeUndefined();
@@ -326,16 +295,12 @@ describe("registerConversationTools", () => {
 
 	describe("error handling", () => {
 		it("should throw on non-ok response with error from body", async () => {
-			mockFetch.mockResolvedValue(
-				mockJsonResponse({ error: "Session not found" }, false, 404),
-			);
+			mockFetch.mockResolvedValue(mockJsonResponse({ error: "Session not found" }, false, 404));
 			registerConversationTools(registry, API_BASE);
 
 			const tool = getTool(registry, "listSessions");
 
-			await expect(tool.execute({}, mockClient)).rejects.toThrow(
-				"Session not found",
-			);
+			await expect(tool.execute({}, mockClient)).rejects.toThrow("Session not found");
 		});
 
 		it("should throw generic error when body has no error field", async () => {
@@ -344,9 +309,7 @@ describe("registerConversationTools", () => {
 
 			const tool = getTool(registry, "getStatus");
 
-			await expect(tool.execute({}, mockClient)).rejects.toThrow(
-				"Request failed (500)",
-			);
+			await expect(tool.execute({}, mockClient)).rejects.toThrow("Request failed (500)");
 		});
 
 		it("should throw generic error when body is not JSON", async () => {
@@ -359,9 +322,7 @@ describe("registerConversationTools", () => {
 
 			const tool = getTool(registry, "getStatus");
 
-			await expect(tool.execute({}, mockClient)).rejects.toThrow(
-				"Request failed",
-			);
+			await expect(tool.execute({}, mockClient)).rejects.toThrow("Request failed");
 		});
 	});
 
@@ -376,8 +337,7 @@ describe("registerConversationTools", () => {
 					text: { type: "string", description: "The message text to send" },
 					sessionId: {
 						type: "string",
-						description:
-							"Session name to send the message in. If omitted, uses the default session.",
+						description: "Session name to send the message in. If omitted, uses the default session.",
 					},
 				},
 				required: ["text"],
@@ -443,10 +403,7 @@ describe("registerConversationTools", () => {
 			const tool = getTool(registry, "listSessions");
 			await tool.execute({}, mockClient);
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				"http://localhost:7437/api/sessions",
-				expect.any(Object),
-			);
+			expect(mockFetch).toHaveBeenCalledWith("http://localhost:7437/api/sessions", expect.any(Object));
 		});
 	});
 });
