@@ -267,10 +267,7 @@ describe("WebMCPRegistry", () => {
 	describe("registerPlugin", () => {
 		it("should register tools from a plugin manifest with matching handlers", () => {
 			const execute: ToolExecuteCallback = vi.fn().mockResolvedValue("ok");
-			const plugin = makePlugin(
-				[{ name: "search", description: "Search the web" }],
-				{ search: execute },
-			);
+			const plugin = makePlugin([{ name: "search", description: "Search the web" }], { search: execute });
 
 			registry.registerPlugin(plugin);
 
@@ -416,10 +413,7 @@ describe("bindPluginLifecycle", () => {
 
 		bindPluginLifecycle(registry, eventBus);
 
-		const plugin = makePlugin(
-			[{ name: "new-tool", description: "A new tool" }],
-			{ "new-tool": vi.fn() },
-		);
+		const plugin = makePlugin([{ name: "new-tool", description: "A new tool" }], { "new-tool": vi.fn() });
 
 		// Simulate plugin:loaded event
 		for (const handler of listeners["plugin:loaded"] ?? []) {
@@ -441,10 +435,7 @@ describe("bindPluginLifecycle", () => {
 
 		bindPluginLifecycle(registry, eventBus);
 
-		const plugin = makePlugin(
-			[{ name: "ephemeral", description: "Temporary" }],
-			{ ephemeral: vi.fn() },
-		);
+		const plugin = makePlugin([{ name: "ephemeral", description: "Temporary" }], { ephemeral: vi.fn() });
 
 		// Load then unload
 		for (const handler of listeners["plugin:loaded"] ?? []) {
