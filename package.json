@@ -31,7 +31,8 @@
     "lint:fix": "biome check --fix src/plugin.ts tests/",
     "preview": "vite preview",
     "test": "vitest run",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc -p tsconfig.plugin.json --noEmit"
   },
   "type": "module",
   "version": "0.2.0",
