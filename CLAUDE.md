@@ -1,31 +1,39 @@
 # wopr-plugin-webui
 
-Web UI plugin for WOPR — React-based local dashboard for sessions, plugins, and configuration.
+`@wopr-network/wopr-plugin-webui` — SolidJS-based local admin dashboard for WOPR.
 
 ## Commands
 
 ```bash
-npm run build     # tsc
-npm run check     # biome check + tsc --noEmit (run before committing)
-npm run format    # biome format --write src/
-npm test          # vitest run
+npm run build        # vite build + tsc (UI + plugin entry)
+npm run build:ui     # vite build (SolidJS frontend only)
+npm run build:plugin # tsc -p tsconfig.plugin.json (plugin entry only)
+npm run check        # biome check + tsc --noEmit (run before committing)
+npm run lint:fix     # biome check --fix src/plugin.ts tests/
+npm run format       # biome format --write src/plugin.ts tests/
+npm test             # vitest run
 ```
+
+**Linter/formatter is Biome.** Never add ESLint/Prettier config.
 
 ## Architecture
 
 ```
 src/
-  index.tsx       # Plugin entry — registers web server, serves React app
-  App.tsx         # Root React component
-  index.css       # Global styles
-  components/     # UI components (sessions, plugin panels, config forms)
-  lib/            # Shared utilities
+  plugin.ts       # Plugin entry — exports WOPRPlugin default, starts HTTP server
+  App.tsx          # Root SolidJS component
+  index.tsx        # SolidJS render entry
+  index.css        # Global styles (Tailwind)
+  components/      # UI components (settings panel)
+  lib/             # API client, shared utilities
+tests/
+  plugin.test.ts   # Plugin lifecycle tests
 ```
 
 ## Key Details
 
-- Serves a local React SPA on a configurable port (default: 3001)
-- Other plugins can register UI panels via `WOPRPluginContext.registerPanel()`
+- Serves a local SolidJS SPA on a configurable port (default: 3000)
+- Other plugins can register UI panels via `WOPRPluginContext.registerUiComponent()`
 - This is the **local embedded UI** — separate from `wopr-platform-ui` (the cloud SaaS platform)
 - Dark mode only — this is a developer/admin tool, not end-user facing
 - **Distinction**: `wopr-plugin-webui` = local admin panel bundled with the bot. `wopr-platform-ui` = cloud SaaS dashboard at wopr.network.
@@ -37,9 +45,3 @@ Imports only from `@wopr-network/plugin-types`. Never import from `@wopr-network
 ## Issue Tracking
 
 All issues in **Linear** (team: WOPR). Issue descriptions start with `**Repo:** wopr-network/wopr-plugin-webui`.
-
-## Session Memory
-
-At the start of every WOPR session, **read `~/.wopr-memory.md` if it exists.** It contains recent session context: which repos were active, what branches are in flight, and how many uncommitted changes exist. Use it to orient quickly without re-investigating.
-
-The `Stop` hook writes to this file automatically at session end. Only non-main branches are recorded — if everything is on `main`, nothing is written for that repo.
