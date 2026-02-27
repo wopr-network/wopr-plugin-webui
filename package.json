@@ -6,7 +6,7 @@
   },
   "description": "Web UI plugin for WOPR - SolidJS-based dashboard for sessions, plugins, and configuration",
   "devDependencies": {
-    "@biomejs/biome": "^2.4.3",
+    "@biomejs/biome": "^2.4.4",
     "@types/node": "^25.3.0",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.4.0",
