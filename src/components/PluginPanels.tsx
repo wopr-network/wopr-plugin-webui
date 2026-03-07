@@ -9,12 +9,7 @@ import {
 	Show,
 	Switch,
 } from "solid-js";
-import {
-	api,
-	type ConfigFieldDef,
-	type PluginManifestSummary,
-	type WebUIPanel,
-} from "../lib/api";
+import { api, type ConfigFieldDef, type PluginManifestSummary, type WebUIPanel } from "../lib/api";
 
 const DEFAULT_POLL_MS = 10_000;
 
@@ -24,9 +19,7 @@ const StatusPanel: Component<{
 	plugin: PluginManifestSummary;
 	panel: WebUIPanel;
 }> = (props) => {
-	const [statuses, setStatuses] = createSignal<
-		Record<string, { ok: boolean; data?: unknown; error?: string }>
-	>({});
+	const [statuses, setStatuses] = createSignal<Record<string, { ok: boolean; data?: unknown; error?: string }>>({});
 
 	const endpoints = () => props.panel.endpoints ?? [];
 	const intervalMs = () => props.panel.pollIntervalMs ?? DEFAULT_POLL_MS;
@@ -35,10 +28,7 @@ const StatusPanel: Component<{
 		let cancelled = false;
 
 		async function poll() {
-			const results: Record<
-				string,
-				{ ok: boolean; data?: unknown; error?: string }
-			> = {};
+			const results: Record<string, { ok: boolean; data?: unknown; error?: string }> = {};
 			for (const ep of endpoints()) {
 				try {
 					const data = await api.pollPluginEndpoint(props.plugin.name, ep);
@@ -63,23 +53,15 @@ const StatusPanel: Component<{
 
 	return (
 		<div class="space-y-2">
-			<Show
-				when={endpoints().length > 0}
-				fallback={<p class="text-wopr-muted text-sm">No endpoints declared</p>}
-			>
+			<Show when={endpoints().length > 0} fallback={<p class="text-wopr-muted text-sm">No endpoints declared</p>}>
 				<For each={endpoints()}>
 					{(ep) => {
 						const status = () => statuses()[ep];
 						return (
 							<div class="flex items-center justify-between bg-wopr-bg rounded px-3 py-2 text-sm">
 								<code class="text-wopr-muted">{ep}</code>
-								<Show
-									when={status()}
-									fallback={<span class="text-wopr-muted">polling...</span>}
-								>
-									<span
-										class={status()?.ok ? "text-green-400" : "text-red-400"}
-									>
+								<Show when={status()} fallback={<span class="text-wopr-muted">polling...</span>}>
+									<span class={status()?.ok ? "text-green-400" : "text-red-400"}>
 										{status()?.ok ? "OK" : (status()?.error ?? "Error")}
 									</span>
 								</Show>
@@ -106,16 +88,11 @@ const ConfigPanel: Component<{
 	// Load plugin config on mount
 	const [loaded] = createResource(async () => {
 		try {
-			const data = (await api.getPluginConfig(props.plugin.name)) as Record<
-				string,
-				unknown
-			>;
+			const data = (await api.getPluginConfig(props.plugin.name)) as Record<string, unknown>;
 			setConfig(data);
 			return true;
 		} catch (err: unknown) {
-			setLoadError(
-				err instanceof Error ? err.message : "Failed to load config",
-			);
+			setLoadError(err instanceof Error ? err.message : "Failed to load config");
 			return false;
 		}
 	});
@@ -141,9 +118,7 @@ const ConfigPanel: Component<{
 			setMessage("Saved");
 			setTimeout(() => setMessage(null), 2000);
 		} catch (err: unknown) {
-			setMessage(
-				`Error: ${err instanceof Error ? err.message : "Unknown error"}`,
-			);
+			setMessage(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
 		} finally {
 			setSaving(false);
 		}
@@ -169,36 +144,26 @@ const ConfigPanel: Component<{
 				<For each={fields()}>
 					{(field) => (
 						<label class="block">
-							<span class="block text-sm text-wopr-muted mb-1">
-								{field.label}
-							</span>
+							<span class="block text-sm text-wopr-muted mb-1">{field.label}</span>
 							<Show when={field.description}>
-								<p class="text-xs text-wopr-muted/70 mb-1">
-									{field.description}
-								</p>
+								<p class="text-xs text-wopr-muted/70 mb-1">{field.description}</p>
 							</Show>
 							<Switch
 								fallback={
 									<input
 										type={field.secret ? "password" : "text"}
 										value={String(config()[field.name] ?? field.default ?? "")}
-										onInput={(e) =>
-											updateField(field.name, e.currentTarget.value)
-										}
+										onInput={(e) => updateField(field.name, e.currentTarget.value)}
 										placeholder={field.placeholder}
 										class="w-full bg-wopr-bg border border-wopr-border rounded px-3 py-2 text-sm focus:outline-none focus:border-wopr-accent"
 									/>
 								}
 							>
-								<Match
-									when={field.type === "checkbox" || field.type === "boolean"}
-								>
+								<Match when={field.type === "checkbox" || field.type === "boolean"}>
 									<input
 										type="checkbox"
 										checked={Boolean(config()[field.name] ?? field.default)}
-										onChange={(e) =>
-											updateField(field.name, e.currentTarget.checked)
-										}
+										onChange={(e) => updateField(field.name, e.currentTarget.checked)}
 										class="rounded border-wopr-border"
 									/>
 								</Match>
@@ -206,9 +171,7 @@ const ConfigPanel: Component<{
 									<input
 										type="number"
 										value={Number(config()[field.name] ?? field.default ?? 0)}
-										onInput={(e) =>
-											updateField(field.name, Number(e.currentTarget.value))
-										}
+										onInput={(e) => updateField(field.name, Number(e.currentTarget.value))}
 										placeholder={field.placeholder}
 										class="w-full bg-wopr-bg border border-wopr-border rounded px-3 py-2 text-sm focus:outline-none focus:border-wopr-accent"
 									/>
@@ -216,22 +179,16 @@ const ConfigPanel: Component<{
 								<Match when={field.type === "select" && field.options}>
 									<select
 										value={String(config()[field.name] ?? field.default ?? "")}
-										onChange={(e) =>
-											updateField(field.name, e.currentTarget.value)
-										}
+										onChange={(e) => updateField(field.name, e.currentTarget.value)}
 										class="w-full bg-wopr-bg border border-wopr-border rounded px-3 py-2 text-sm focus:outline-none focus:border-wopr-accent"
 									>
-										<For each={field.options}>
-											{(opt) => <option value={opt.value}>{opt.label}</option>}
-										</For>
+										<For each={field.options}>{(opt) => <option value={opt.value}>{opt.label}</option>}</For>
 									</select>
 								</Match>
 								<Match when={field.type === "textarea"}>
 									<textarea
 										value={String(config()[field.name] ?? field.default ?? "")}
-										onInput={(e) =>
-											updateField(field.name, e.currentTarget.value)
-										}
+										onInput={(e) => updateField(field.name, e.currentTarget.value)}
 										placeholder={field.placeholder}
 										rows={3}
 										class="w-full bg-wopr-bg border border-wopr-border rounded px-3 py-2 text-sm resize-none focus:outline-none focus:border-wopr-accent"
@@ -252,9 +209,7 @@ const ConfigPanel: Component<{
 						{saving() ? "Saving..." : "Save"}
 					</button>
 					<Show when={message()}>
-						<span
-							class={`text-sm ${message()?.startsWith("Error") ? "text-red-400" : "text-green-400"}`}
-						>
+						<span class={`text-sm ${message()?.startsWith("Error") ? "text-red-400" : "text-green-400"}`}>
 							{message()}
 						</span>
 					</Show>
@@ -296,19 +251,13 @@ const MetricsPanel: Component<{
 		async function poll() {
 			for (const ep of endpoints()) {
 				try {
-					const data = (await api.pollPluginEndpoint(
-						props.plugin.name,
-						ep,
-					)) as Record<string, unknown>;
+					const data = (await api.pollPluginEndpoint(props.plugin.name, ep)) as Record<string, unknown>;
 					if (!cancelled) {
 						setMetrics((prev) => ({ ...prev, ...data }));
 						setStale(false);
 					}
 				} catch (err: unknown) {
-					console.error(
-						`[MetricsPanel] Failed to poll ${ep} for ${props.plugin.name}:`,
-						err,
-					);
+					console.error(`[MetricsPanel] Failed to poll ${ep} for ${props.plugin.name}:`, err);
 					if (!cancelled) setStale(true);
 				}
 			}
@@ -359,9 +308,7 @@ const PanelCard: Component<{
 				{props.panel.title}
 			</h3>
 
-			<Switch
-				fallback={<p class="text-wopr-muted text-sm">Unknown panel type</p>}
-			>
+			<Switch fallback={<p class="text-wopr-muted text-sm">Unknown panel type</p>}>
 				<Match when={props.panel.type === "status"}>
 					<StatusPanel plugin={props.plugin} panel={props.panel} />
 				</Match>
@@ -375,9 +322,7 @@ const PanelCard: Component<{
 					<MetricsPanel plugin={props.plugin} panel={props.panel} />
 				</Match>
 				<Match when={props.panel.type === "custom"}>
-					<p class="text-wopr-muted text-sm">
-						Custom component: {props.panel.component ?? "(none)"}
-					</p>
+					<p class="text-wopr-muted text-sm">Custom component: {props.panel.component ?? "(none)"}</p>
 				</Match>
 			</Switch>
 		</section>
@@ -395,18 +340,14 @@ const PluginSection: Component<{ plugin: PluginManifestSummary }> = (props) => {
 				<Show when={props.plugin.icon}>
 					<span class="text-lg">{props.plugin.icon}</span>
 				</Show>
-				<h2 class="text-lg font-semibold text-wopr-text">
-					{props.plugin.name}
-				</h2>
+				<h2 class="text-lg font-semibold text-wopr-text">{props.plugin.name}</h2>
 				<span class="text-xs text-wopr-muted">v{props.plugin.version}</span>
 			</div>
 			<Show when={props.plugin.description}>
 				<p class="text-sm text-wopr-muted -mt-2">{props.plugin.description}</p>
 			</Show>
 			<div class="grid gap-4 md:grid-cols-2">
-				<For each={panels()}>
-					{(panel) => <PanelCard plugin={props.plugin} panel={panel} />}
-				</For>
+				<For each={panels()}>{(panel) => <PanelCard plugin={props.plugin} panel={panel} />}</For>
 			</div>
 		</div>
 	);
@@ -420,26 +361,18 @@ const PluginPanels: Component = () => {
 		return data.manifests;
 	});
 
-	const pluginsWithPanels = () =>
-		(manifests() ?? []).filter(
-			(m) => m.webui?.panels && m.webui.panels.length > 0,
-		);
+	const pluginsWithPanels = () => (manifests() ?? []).filter((m) => m.webui?.panels && m.webui.panels.length > 0);
 
 	return (
 		<div class="max-w-5xl mx-auto p-6">
 			<h1 class="text-2xl font-bold text-wopr-accent mb-6">Plugin Panels</h1>
 
-			<Show
-				when={!manifests.loading}
-				fallback={<p class="text-wopr-muted">Loading plugins...</p>}
-			>
+			<Show when={!manifests.loading} fallback={<p class="text-wopr-muted">Loading plugins...</p>}>
 				<Show when={manifests.error}>
 					<div class="text-center py-12">
 						<p class="text-red-400 text-lg mb-2">Failed to load plugins</p>
 						<p class="text-wopr-muted text-sm">
-							{manifests.error instanceof Error
-								? manifests.error.message
-								: "Unknown error"}
+							{manifests.error instanceof Error ? manifests.error.message : "Unknown error"}
 						</p>
 					</div>
 				</Show>
@@ -450,16 +383,13 @@ const PluginPanels: Component = () => {
 							<div class="text-center py-12 text-wopr-muted">
 								<p class="text-lg mb-2">No plugin panels available</p>
 								<p class="text-sm">
-									Install plugins that declare a <code>webui</code> section in
-									their manifest to see panels here.
+									Install plugins that declare a <code>webui</code> section in their manifest to see panels here.
 								</p>
 							</div>
 						}
 					>
 						<div class="space-y-8">
-							<For each={pluginsWithPanels()}>
-								{(plugin) => <PluginSection plugin={plugin} />}
-							</For>
+							<For each={pluginsWithPanels()}>{(plugin) => <PluginSection plugin={plugin} />}</For>
 						</div>
 					</Show>
 				</Show>

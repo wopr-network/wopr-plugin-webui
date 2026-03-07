@@ -142,18 +142,14 @@ const Settings: Component = () => {
 									}
 									class="rounded border-wopr-border"
 								/>
-								<label class="text-sm text-wopr-text">
-									Auto-start daemon on boot
-								</label>
+								<label class="text-sm text-wopr-text">Auto-start daemon on boot</label>
 							</div>
 						</div>
 					</section>
 
 					{/* Anthropic */}
 					<section class="bg-wopr-panel border border-wopr-border rounded-lg p-4">
-						<h2 class="text-lg font-semibold text-wopr-accent mb-4">
-							Anthropic
-						</h2>
+						<h2 class="text-lg font-semibold text-wopr-accent mb-4">Anthropic</h2>
 						<div>
 							<label class="block text-sm text-wopr-muted mb-1">API Key</label>
 							<input
@@ -176,14 +172,10 @@ const Settings: Component = () => {
 
 					{/* OAuth */}
 					<section class="bg-wopr-panel border border-wopr-border rounded-lg p-4">
-						<h2 class="text-lg font-semibold text-wopr-accent mb-4">
-							OAuth (claude.ai login)
-						</h2>
+						<h2 class="text-lg font-semibold text-wopr-accent mb-4">OAuth (claude.ai login)</h2>
 						<div class="space-y-3">
 							<div>
-								<label class="block text-sm text-wopr-muted mb-1">
-									Client ID
-								</label>
+								<label class="block text-sm text-wopr-muted mb-1">Client ID</label>
 								<input
 									type="text"
 									value={config()!.oauth.clientId || ""}
@@ -200,9 +192,7 @@ const Settings: Component = () => {
 								/>
 							</div>
 							<div>
-								<label class="block text-sm text-wopr-muted mb-1">
-									Client Secret
-								</label>
+								<label class="block text-sm text-wopr-muted mb-1">Client Secret</label>
 								<input
 									type="password"
 									value={config()!.oauth.clientSecret || ""}
@@ -219,9 +209,7 @@ const Settings: Component = () => {
 								/>
 							</div>
 							<div>
-								<label class="block text-sm text-wopr-muted mb-1">
-									Redirect URI
-								</label>
+								<label class="block text-sm text-wopr-muted mb-1">Redirect URI</label>
 								<input
 									type="text"
 									value={config()!.oauth.redirectUri || ""}
@@ -243,14 +231,10 @@ const Settings: Component = () => {
 
 					{/* Discord */}
 					<section class="bg-wopr-panel border border-wopr-border rounded-lg p-4">
-						<h2 class="text-lg font-semibold text-wopr-accent mb-4">
-							Discord Bot
-						</h2>
+						<h2 class="text-lg font-semibold text-wopr-accent mb-4">Discord Bot</h2>
 						<div class="space-y-3">
 							<div>
-								<label class="block text-sm text-wopr-muted mb-1">
-									Bot Token
-								</label>
+								<label class="block text-sm text-wopr-muted mb-1">Bot Token</label>
 								<input
 									type="password"
 									value={config()!.discord?.token || ""}
@@ -267,9 +251,7 @@ const Settings: Component = () => {
 								/>
 							</div>
 							<div>
-								<label class="block text-sm text-wopr-muted mb-1">
-									Guild ID (optional)
-								</label>
+								<label class="block text-sm text-wopr-muted mb-1">Guild ID (optional)</label>
 								<input
 									type="text"
 									value={config()!.discord?.guildId || ""}
@@ -290,14 +272,10 @@ const Settings: Component = () => {
 
 					{/* Discovery */}
 					<section class="bg-wopr-panel border border-wopr-border rounded-lg p-4">
-						<h2 class="text-lg font-semibold text-wopr-accent mb-4">
-							Discovery
-						</h2>
+						<h2 class="text-lg font-semibold text-wopr-accent mb-4">Discovery</h2>
 						<div class="space-y-3">
 							<div>
-								<label class="block text-sm text-wopr-muted mb-1">
-									Auto-join Topics (comma-separated)
-								</label>
+								<label class="block text-sm text-wopr-muted mb-1">Auto-join Topics (comma-separated)</label>
 								<input
 									type="text"
 									value={config()!.discovery.topics.join(", ")}
@@ -306,9 +284,7 @@ const Settings: Component = () => {
 											...config()!,
 											discovery: {
 												...config()!.discovery,
-												topics: e.currentTarget.value
-													.split(",")
-													.map((t) => t.trim()),
+												topics: e.currentTarget.value.split(",").map((t) => t.trim()),
 											},
 										})
 									}
@@ -331,9 +307,7 @@ const Settings: Component = () => {
 									}
 									class="rounded border-wopr-border"
 								/>
-								<label class="text-sm text-wopr-text">
-									Auto-join topics on startup
-								</label>
+								<label class="text-sm text-wopr-text">Auto-join topics on startup</label>
 							</div>
 						</div>
 					</section>
@@ -357,9 +331,7 @@ const Settings: Component = () => {
 									}
 									class="rounded border-wopr-border"
 								/>
-								<label class="text-sm text-wopr-text">
-									Auto-load plugins on startup
-								</label>
+								<label class="text-sm text-wopr-text">Auto-load plugins on startup</label>
 							</div>
 						</div>
 					</section>
