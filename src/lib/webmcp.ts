@@ -21,16 +21,11 @@ export interface ToolAnnotations {
  * Provides requestUserInteraction() for consent flows.
  */
 export interface ModelContextClient {
-	requestUserInteraction(
-		callback: (element: Element) => Promise<unknown>,
-	): Promise<unknown>;
+	requestUserInteraction(callback: (element: Element) => Promise<unknown>): Promise<unknown>;
 }
 
 /** Callback signature for tool execution per W3C spec */
-export type ToolExecuteCallback = (
-	input: Record<string, unknown>,
-	client: ModelContextClient,
-) => Promise<unknown>;
+export type ToolExecuteCallback = (input: Record<string, unknown>, client: ModelContextClient) => Promise<unknown>;
 
 /** A tool registered via navigator.modelContext.registerTool() */
 export interface ModelContextTool {
@@ -64,13 +59,8 @@ interface ModelContext {
 }
 
 function getModelContext(): ModelContext | undefined {
-	const nav = globalThis.navigator as
-		| (Navigator & { modelContext?: ModelContext })
-		| undefined;
-	if (
-		nav?.modelContext &&
-		typeof nav.modelContext.registerTool === "function"
-	) {
+	const nav = globalThis.navigator as (Navigator & { modelContext?: ModelContext }) | undefined;
+	if (nav?.modelContext && typeof nav.modelContext.registerTool === "function") {
 		return nav.modelContext;
 	}
 	return undefined;
@@ -124,8 +114,7 @@ export class WebMCPRegistry {
 				name: tool.name,
 				description: tool.description,
 				inputSchema: tool.inputSchema,
-				execute: (input: Record<string, unknown>, client: ModelContextClient) =>
-					tool.execute(input, client),
+				execute: (input: Record<string, unknown>, client: ModelContextClient) => tool.execute(input, client),
 				annotations: tool.annotations,
 			});
 		}

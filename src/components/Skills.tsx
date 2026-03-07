@@ -7,9 +7,7 @@ const Skills: Component = () => {
 	const [available, setAvailable] = createSignal<AvailableSkill[]>([]);
 	const [loading, setLoading] = createSignal(true);
 	const [error, setError] = createSignal<string | null>(null);
-	const [actionInProgress, setActionInProgress] = createSignal<string | null>(
-		null,
-	);
+	const [actionInProgress, setActionInProgress] = createSignal<string | null>(null);
 
 	async function loadInstalled() {
 		try {
@@ -49,9 +47,7 @@ const Skills: Component = () => {
 			await loadInstalled();
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : "Unknown error";
-			setError(
-				`Failed to ${skill.enabled ? "disable" : "enable"} skill: ${msg}`,
-			);
+			setError(`Failed to ${skill.enabled ? "disable" : "enable"} skill: ${msg}`);
 		} finally {
 			setActionInProgress(null);
 		}
@@ -96,9 +92,7 @@ const Skills: Component = () => {
 					type="button"
 					onClick={() => setTab("installed")}
 					class={`px-4 py-2 rounded-t text-sm font-semibold transition-colors ${
-						tab() === "installed"
-							? "bg-wopr-accent text-wopr-bg"
-							: "text-wopr-muted hover:text-wopr-text"
+						tab() === "installed" ? "bg-wopr-accent text-wopr-bg" : "text-wopr-muted hover:text-wopr-text"
 					}`}
 				>
 					Installed
@@ -107,9 +101,7 @@ const Skills: Component = () => {
 					type="button"
 					onClick={() => setTab("available")}
 					class={`px-4 py-2 rounded-t text-sm font-semibold transition-colors ${
-						tab() === "available"
-							? "bg-wopr-accent text-wopr-bg"
-							: "text-wopr-muted hover:text-wopr-text"
+						tab() === "available" ? "bg-wopr-accent text-wopr-bg" : "text-wopr-muted hover:text-wopr-text"
 					}`}
 				>
 					Available
@@ -130,11 +122,7 @@ const Skills: Component = () => {
 				<Show when={tab() === "installed"}>
 					<Show
 						when={installed().length > 0}
-						fallback={
-							<div class="text-wopr-muted">
-								No skills installed. Browse the Available tab to find skills.
-							</div>
-						}
+						fallback={<div class="text-wopr-muted">No skills installed. Browse the Available tab to find skills.</div>}
 					>
 						<div class="space-y-3">
 							<For each={installed()}>
@@ -142,27 +130,19 @@ const Skills: Component = () => {
 									<div class="bg-wopr-panel border border-wopr-border rounded-lg p-4 flex items-center justify-between">
 										<div class="flex-1 min-w-0">
 											<div class="flex items-center gap-2">
-												<span class="font-semibold text-wopr-text">
-													{skill.name}
-												</span>
+												<span class="font-semibold text-wopr-text">{skill.name}</span>
 												<Show when={skill.version}>
-													<span class="text-xs text-wopr-muted">
-														v{skill.version}
-													</span>
+													<span class="text-xs text-wopr-muted">v{skill.version}</span>
 												</Show>
 												<span
 													class={`text-xs px-2 py-0.5 rounded ${
-														skill.enabled
-															? "bg-green-500/20 text-green-500"
-															: "bg-wopr-border text-wopr-muted"
+														skill.enabled ? "bg-green-500/20 text-green-500" : "bg-wopr-border text-wopr-muted"
 													}`}
 												>
 													{skill.enabled ? "enabled" : "disabled"}
 												</span>
 											</div>
-											<p class="text-sm text-wopr-muted mt-1 truncate">
-												{skill.description}
-											</p>
+											<p class="text-sm text-wopr-muted mt-1 truncate">{skill.description}</p>
 										</div>
 										<div class="flex items-center gap-2 ml-4 shrink-0">
 											<button
@@ -175,11 +155,7 @@ const Skills: Component = () => {
 														: "bg-wopr-accent/20 text-wopr-accent hover:bg-wopr-accent/30"
 												} disabled:opacity-50`}
 											>
-												{actionInProgress() === skill.id
-													? "..."
-													: skill.enabled
-														? "Disable"
-														: "Enable"}
+												{actionInProgress() === skill.id ? "..." : skill.enabled ? "Disable" : "Enable"}
 											</button>
 											<button
 												type="button"
@@ -201,9 +177,7 @@ const Skills: Component = () => {
 				<Show when={tab() === "available"}>
 					<Show
 						when={available().length > 0}
-						fallback={
-							<div class="text-wopr-muted">No additional skills available.</div>
-						}
+						fallback={<div class="text-wopr-muted">No additional skills available.</div>}
 					>
 						<div class="space-y-3">
 							<For each={available()}>
@@ -211,13 +185,9 @@ const Skills: Component = () => {
 									<div class="bg-wopr-panel border border-wopr-border rounded-lg p-4 flex items-center justify-between">
 										<div class="flex-1 min-w-0">
 											<div class="flex items-center gap-2">
-												<span class="font-semibold text-wopr-text">
-													{skill.name}
-												</span>
+												<span class="font-semibold text-wopr-text">{skill.name}</span>
 												<Show when={skill.version}>
-													<span class="text-xs text-wopr-muted">
-														v{skill.version}
-													</span>
+													<span class="text-xs text-wopr-muted">v{skill.version}</span>
 												</Show>
 												<Show when={skill.category}>
 													<span class="text-xs px-2 py-0.5 rounded bg-wopr-border text-wopr-muted">
@@ -225,9 +195,7 @@ const Skills: Component = () => {
 													</span>
 												</Show>
 											</div>
-											<p class="text-sm text-wopr-muted mt-1 truncate">
-												{skill.description}
-											</p>
+											<p class="text-sm text-wopr-muted mt-1 truncate">{skill.description}</p>
 										</div>
 										<div class="ml-4 shrink-0">
 											<button
@@ -236,9 +204,7 @@ const Skills: Component = () => {
 												disabled={actionInProgress() === skill.id}
 												class="px-4 py-1 rounded text-sm font-semibold bg-wopr-accent text-wopr-bg hover:bg-wopr-accent/90 disabled:opacity-50"
 											>
-												{actionInProgress() === skill.id
-													? "Installing..."
-													: "Install"}
+												{actionInProgress() === skill.id ? "Installing..." : "Install"}
 											</button>
 										</div>
 									</div>
