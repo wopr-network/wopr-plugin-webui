@@ -36,9 +36,7 @@ async function daemonRequest<T>(
 	});
 	if (!res.ok) {
 		const err = await res.json().catch(() => ({ error: "Request failed" }));
-		throw new Error(
-			(err as { error?: string }).error || `Request failed (${res.status})`,
-		);
+		throw new Error((err as { error?: string }).error || `Request failed (${res.status})`);
 	}
 	return res.json() as Promise<T>;
 }
@@ -51,10 +49,7 @@ async function daemonRequest<T>(
  * @param registry - The WebMCPRegistry instance to register tools on
  * @param apiBase  - Base URL of the WOPR daemon API (e.g. "/api" or "http://localhost:3000/api")
  */
-export function registerConversationTools(
-	registry: WebMCPRegistry,
-	apiBase = "/api",
-): void {
+export function registerConversationTools(registry: WebMCPRegistry, apiBase = "/api"): void {
 	// 1. sendMessage
 	registry.register({
 		name: "sendMessage",
@@ -65,8 +60,7 @@ export function registerConversationTools(
 				text: { type: "string", description: "The message text to send" },
 				sessionId: {
 					type: "string",
-					description:
-						"Session name to send the message in. If omitted, uses the default session.",
+					description: "Session name to send the message in. If omitted, uses the default session.",
 				},
 			},
 			required: ["text"],
@@ -78,15 +72,10 @@ export function registerConversationTools(
 				throw new Error("Parameter 'text' is required");
 			}
 			const session = (input.sessionId as string) || "default";
-			return daemonRequest(
-				apiBase,
-				`/sessions/${encodeURIComponent(session)}/inject`,
-				auth,
-				{
-					method: "POST",
-					body: JSON.stringify({ message: text }),
-				},
-			);
+			return daemonRequest(apiBase, `/sessions/${encodeURIComponent(session)}/inject`, auth, {
+				method: "POST",
+				body: JSON.stringify({ message: text }),
+			});
 		},
 		annotations: { readOnlyHint: false },
 	});
@@ -115,15 +104,8 @@ export function registerConversationTools(
 			if (!sessionId) {
 				throw new Error("Parameter 'sessionId' is required");
 			}
-			const qs =
-				input.limit !== undefined
-					? `?limit=${encodeURIComponent(String(input.limit))}`
-					: "";
-			return daemonRequest(
-				apiBase,
-				`/sessions/${encodeURIComponent(sessionId)}/history${qs}`,
-				auth,
-			);
+			const qs = input.limit !== undefined ? `?limit=${encodeURIComponent(String(input.limit))}` : "";
+			return daemonRequest(apiBase, `/sessions/${encodeURIComponent(sessionId)}/history${qs}`, auth);
 		},
 		annotations: { readOnlyHint: true },
 	});
@@ -175,8 +157,7 @@ export function registerConversationTools(
 	// 5. getStatus
 	registry.register({
 		name: "getStatus",
-		description:
-			"Get instance health, loaded plugins, connected channels, and uptime.",
+		description: "Get instance health, loaded plugins, connected channels, and uptime.",
 		inputSchema: {
 			type: "object",
 			properties: {},

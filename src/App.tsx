@@ -50,10 +50,7 @@ const PluginComponent: Component<{
 	api: PluginUiComponentProps["api"];
 	currentSession?: string;
 }> = (props) => {
-	const [Component] = createResource(
-		() => props.componentDef.moduleUrl,
-		loadPluginComponent,
-	);
+	const [Component] = createResource(() => props.componentDef.moduleUrl, loadPluginComponent);
 
 	const componentProps = createMemo(() => ({
 		api: props.api,
@@ -63,14 +60,10 @@ const PluginComponent: Component<{
 	}));
 
 	return (
-		<Suspense
-			fallback={<div class="p-2 text-wopr-muted text-sm">Loading...</div>}
-		>
+		<Suspense fallback={<div class="p-2 text-wopr-muted text-sm">Loading...</div>}>
 			<Show when={Component()}>
 				<div class="plugin-component border-t border-wopr-border/50 pt-3 mt-3">
-					<div class="text-xs font-semibold text-wopr-muted uppercase mb-2">
-						{props.componentDef.title}
-					</div>
+					<div class="text-xs font-semibold text-wopr-muted uppercase mb-2">{props.componentDef.title}</div>
 					<Dynamic component={Component()} {...componentProps()} />
 				</div>
 			</Show>
@@ -79,21 +72,15 @@ const PluginComponent: Component<{
 };
 
 const App: Component = () => {
-	const [view, setView] = createSignal<
-		"chat" | "settings" | "plugins" | "skills"
-	>("chat");
+	const [view, setView] = createSignal<"chat" | "settings" | "plugins" | "skills">("chat");
 	const [sessions, setSessions] = createSignal<Session[]>([]);
-	const [selectedSession, setSelectedSession] = createSignal<string | null>(
-		null,
-	);
+	const [selectedSession, setSelectedSession] = createSignal<string | null>(null);
 	const [message, setMessage] = createSignal("");
 	const [response, setResponse] = createSignal("");
 	const [streaming, setStreaming] = createSignal(false);
 	const [connected, setConnected] = createSignal(false);
 	const [extensions, setExtensions] = createSignal<WebUiExtension[]>([]);
-	const [uiComponents, setUiComponents] = createSignal<UiComponentExtension[]>(
-		[],
-	);
+	const [uiComponents, setUiComponents] = createSignal<UiComponentExtension[]>([]);
 
 	let ws: WebSocket | null = null;
 
@@ -106,21 +93,11 @@ const App: Component = () => {
 	};
 
 	// Group components by slot
-	const sidebarComponents = createMemo(() =>
-		uiComponents().filter((c) => c.slot === "sidebar"),
-	);
-	const settingsComponents = createMemo(() =>
-		uiComponents().filter((c) => c.slot === "settings"),
-	);
-	const statusbarComponents = createMemo(() =>
-		uiComponents().filter((c) => c.slot === "statusbar"),
-	);
-	const chatHeaderComponents = createMemo(() =>
-		uiComponents().filter((c) => c.slot === "chat-header"),
-	);
-	const chatFooterComponents = createMemo(() =>
-		uiComponents().filter((c) => c.slot === "chat-footer"),
-	);
+	const sidebarComponents = createMemo(() => uiComponents().filter((c) => c.slot === "sidebar"));
+	const settingsComponents = createMemo(() => uiComponents().filter((c) => c.slot === "settings"));
+	const statusbarComponents = createMemo(() => uiComponents().filter((c) => c.slot === "statusbar"));
+	const chatHeaderComponents = createMemo(() => uiComponents().filter((c) => c.slot === "chat-header"));
+	const chatFooterComponents = createMemo(() => uiComponents().filter((c) => c.slot === "chat-footer"));
 
 	onMount(async () => {
 		// Load sessions
@@ -250,21 +227,13 @@ const App: Component = () => {
 					{/* Status bar plugin components */}
 					<For each={statusbarComponents()}>
 						{(comp) => (
-							<PluginComponent
-								componentDef={comp}
-								api={pluginApi}
-								currentSession={selectedSession() || undefined}
-							/>
+							<PluginComponent componentDef={comp} api={pluginApi} currentSession={selectedSession() || undefined} />
 						)}
 					</For>
 
 					<div class="flex items-center gap-2">
-						<span
-							class={`w-2 h-2 rounded-full ${connected() ? "bg-green-500" : "bg-red-500"}`}
-						/>
-						<span class="text-sm text-wopr-muted">
-							{connected() ? "Connected" : "Disconnected"}
-						</span>
+						<span class={`w-2 h-2 rounded-full ${connected() ? "bg-green-500" : "bg-red-500"}`} />
+						<span class="text-sm text-wopr-muted">{connected() ? "Connected" : "Disconnected"}</span>
 					</div>
 				</div>
 			</header>
@@ -274,13 +243,8 @@ const App: Component = () => {
 					{/* Sidebar */}
 					<aside class="w-64 bg-wopr-panel border-r border-wopr-border p-4">
 						<div class="flex items-center justify-between mb-4">
-							<h2 class="text-sm font-semibold text-wopr-muted uppercase">
-								Sessions
-							</h2>
-							<button
-								onClick={createSession}
-								class="text-wopr-accent hover:text-wopr-accent/80 text-sm"
-							>
+							<h2 class="text-sm font-semibold text-wopr-muted uppercase">Sessions</h2>
+							<button onClick={createSession} class="text-wopr-accent hover:text-wopr-accent/80 text-sm">
 								+ New
 							</button>
 						</div>
@@ -310,20 +274,14 @@ const App: Component = () => {
 						{/* Sidebar plugin components */}
 						<For each={sidebarComponents()}>
 							{(comp) => (
-								<PluginComponent
-									componentDef={comp}
-									api={pluginApi}
-									currentSession={selectedSession() || undefined}
-								/>
+								<PluginComponent componentDef={comp} api={pluginApi} currentSession={selectedSession() || undefined} />
 							)}
 						</For>
 
 						{/* Plugin Extensions (links) */}
 						<Show when={extensions().length > 0}>
 							<div class="mt-6">
-								<h2 class="text-sm font-semibold text-wopr-muted uppercase mb-3">
-									Extensions
-								</h2>
+								<h2 class="text-sm font-semibold text-wopr-muted uppercase mb-3">Extensions</h2>
 								<ul class="space-y-1">
 									<For each={extensions()}>
 										{(ext) => (
@@ -336,12 +294,7 @@ const App: Component = () => {
 													title={ext.description}
 												>
 													<span>{ext.title}</span>
-													<svg
-														class="w-3 h-3 text-wopr-muted"
-														fill="none"
-														stroke="currentColor"
-														viewBox="0 0 24 24"
-													>
+													<svg class="w-3 h-3 text-wopr-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 														<path
 															stroke-linecap="round"
 															stroke-linejoin="round"
@@ -414,11 +367,7 @@ const App: Component = () => {
 								<div class="max-w-4xl mx-auto">
 									<Show when={response()}>
 										<div class="bg-wopr-panel rounded-lg p-4 border border-wopr-border">
-											<pre
-												class={`whitespace-pre-wrap ${streaming() ? "cursor-blink" : ""}`}
-											>
-												{response()}
-											</pre>
+											<pre class={`whitespace-pre-wrap ${streaming() ? "cursor-blink" : ""}`}>{response()}</pre>
 										</div>
 									</Show>
 								</div>
@@ -439,10 +388,7 @@ const App: Component = () => {
 									)}
 								</For>
 
-								<form
-									onSubmit={handleSubmit}
-									class="max-w-4xl mx-auto flex gap-3"
-								>
+								<form onSubmit={handleSubmit} class="max-w-4xl mx-auto flex gap-3">
 									<textarea
 										value={message()}
 										onInput={(e) => setMessage(e.currentTarget.value)}

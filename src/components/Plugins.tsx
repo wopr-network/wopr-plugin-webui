@@ -1,11 +1,4 @@
-import {
-	type Component,
-	createMemo,
-	createSignal,
-	For,
-	onMount,
-	Show,
-} from "solid-js";
+import { type Component, createMemo, createSignal, For, onMount, Show } from "solid-js";
 import {
 	type AvailablePlugin,
 	api,
@@ -33,26 +26,17 @@ const Plugins: Component = () => {
 	const [installing, setInstalling] = createSignal<string | null>(null);
 	const [uninstalling, setUninstalling] = createSignal<string | null>(null);
 	const [toggling, setToggling] = createSignal<string | null>(null);
-	const [categoryFilter, setCategoryFilter] = createSignal<
-		PluginCategory | "all"
-	>("all");
+	const [categoryFilter, setCategoryFilter] = createSignal<PluginCategory | "all">("all");
 
 	// Config panel state
 	const [configPluginId, setConfigPluginId] = createSignal<string | null>(null);
-	const [configSchema, setConfigSchema] = createSignal<Record<
-		string,
-		ConfigSchemaField
-	> | null>(null);
-	const [configValues, setConfigValues] = createSignal<Record<string, unknown>>(
-		{},
-	);
+	const [configSchema, setConfigSchema] = createSignal<Record<string, ConfigSchemaField> | null>(null);
+	const [configValues, setConfigValues] = createSignal<Record<string, unknown>>({});
 	const [savingConfig, setSavingConfig] = createSignal(false);
 	const [configMessage, setConfigMessage] = createSignal<string | null>(null);
 
 	// Detail panel for available plugins
-	const [detailPlugin, setDetailPlugin] = createSignal<AvailablePlugin | null>(
-		null,
-	);
+	const [detailPlugin, setDetailPlugin] = createSignal<AvailablePlugin | null>(null);
 
 	async function loadInstalled() {
 		try {
@@ -199,9 +183,7 @@ const Plugins: Component = () => {
 							setDetailPlugin(null);
 						}}
 						class={`px-4 py-2 rounded text-sm ${
-							tab() === "installed"
-								? "bg-wopr-accent text-wopr-bg"
-								: "text-wopr-muted hover:text-wopr-text"
+							tab() === "installed" ? "bg-wopr-accent text-wopr-bg" : "text-wopr-muted hover:text-wopr-text"
 						}`}
 					>
 						Installed ({installed().length})
@@ -213,9 +195,7 @@ const Plugins: Component = () => {
 							setDetailPlugin(null);
 						}}
 						class={`px-4 py-2 rounded text-sm ${
-							tab() === "available"
-								? "bg-wopr-accent text-wopr-bg"
-								: "text-wopr-muted hover:text-wopr-text"
+							tab() === "available" ? "bg-wopr-accent text-wopr-bg" : "text-wopr-muted hover:text-wopr-text"
 						}`}
 					>
 						Available
@@ -238,13 +218,9 @@ const Plugins: Component = () => {
 					<div class="mb-6 bg-wopr-panel border border-wopr-border rounded-lg p-4">
 						<div class="flex items-center justify-between mb-4">
 							<h2 class="text-lg font-semibold text-wopr-accent">
-								Configure:{" "}
-								{installed().find((p) => p.id === configPluginId())?.name}
+								Configure: {installed().find((p) => p.id === configPluginId())?.name}
 							</h2>
-							<button
-								onClick={closeConfig}
-								class="text-wopr-muted hover:text-wopr-text text-sm"
-							>
+							<button onClick={closeConfig} class="text-wopr-muted hover:text-wopr-text text-sm">
 								Close
 							</button>
 						</div>
@@ -252,9 +228,7 @@ const Plugins: Component = () => {
 						<Show when={configMessage()}>
 							<div
 								class={`mb-4 p-3 rounded ${
-									configMessage()?.startsWith("Error")
-										? "bg-red-500/20 text-red-500"
-										: "bg-green-500/20 text-green-500"
+									configMessage()?.startsWith("Error") ? "bg-red-500/20 text-red-500" : "bg-green-500/20 text-green-500"
 								}`}
 							>
 								{configMessage()}
@@ -263,11 +237,7 @@ const Plugins: Component = () => {
 
 						<Show
 							when={configSchema() && Object.keys(configSchema()!).length > 0}
-							fallback={
-								<div class="text-wopr-muted text-sm">
-									No configuration options available for this plugin.
-								</div>
-							}
+							fallback={<div class="text-wopr-muted text-sm">No configuration options available for this plugin.</div>}
 						>
 							<div class="space-y-4">
 								<For each={Object.entries(configSchema()!)}>
@@ -275,73 +245,44 @@ const Plugins: Component = () => {
 										<div>
 											<label class="block text-sm text-wopr-muted mb-1">
 												{field.label}
-												{field.required && (
-													<span class="text-red-500 ml-1">*</span>
-												)}
+												{field.required && <span class="text-red-500 ml-1">*</span>}
 											</label>
 											<Show when={field.description}>
-												<p class="text-xs text-wopr-muted/70 mb-1">
-													{field.description}
-												</p>
+												<p class="text-xs text-wopr-muted/70 mb-1">{field.description}</p>
 											</Show>
 
 											{field.type === "boolean" ? (
 												<div class="flex items-center gap-2">
 													<input
 														type="checkbox"
-														checked={
-															!!(configValues()[key] ?? field.default ?? false)
-														}
-														onChange={(e) =>
-															updateConfigValue(key, e.currentTarget.checked)
-														}
+														checked={!!(configValues()[key] ?? field.default ?? false)}
+														onChange={(e) => updateConfigValue(key, e.currentTarget.checked)}
 														class="rounded border-wopr-border"
 													/>
-													<span class="text-sm text-wopr-text">
-														{field.label}
-													</span>
+													<span class="text-sm text-wopr-text">{field.label}</span>
 												</div>
 											) : field.type === "select" ? (
 												<select
-													value={
-														(configValues()[key] ??
-															field.default ??
-															"") as string
-													}
-													onChange={(e) =>
-														updateConfigValue(key, e.currentTarget.value)
-													}
+													value={(configValues()[key] ?? field.default ?? "") as string}
+													onChange={(e) => updateConfigValue(key, e.currentTarget.value)}
 													class="w-full bg-wopr-bg border border-wopr-border rounded px-3 py-2 focus:outline-none focus:border-wopr-accent"
 												>
 													<For each={field.options || []}>
-														{(opt) => (
-															<option value={opt.value}>{opt.label}</option>
-														)}
+														{(opt) => <option value={opt.value}>{opt.label}</option>}
 													</For>
 												</select>
 											) : field.type === "number" ? (
 												<input
 													type="number"
-													value={Number(
-														configValues()[key] ?? field.default ?? 0,
-													)}
-													onInput={(e) =>
-														updateConfigValue(
-															key,
-															Number.parseFloat(e.currentTarget.value) || 0,
-														)
-													}
+													value={Number(configValues()[key] ?? field.default ?? 0)}
+													onInput={(e) => updateConfigValue(key, Number.parseFloat(e.currentTarget.value) || 0)}
 													class="w-full bg-wopr-bg border border-wopr-border rounded px-3 py-2 focus:outline-none focus:border-wopr-accent"
 												/>
 											) : (
 												<input
 													type="text"
-													value={String(
-														configValues()[key] ?? field.default ?? "",
-													)}
-													onInput={(e) =>
-														updateConfigValue(key, e.currentTarget.value)
-													}
+													value={String(configValues()[key] ?? field.default ?? "")}
+													onInput={(e) => updateConfigValue(key, e.currentTarget.value)}
 													class="w-full bg-wopr-bg border border-wopr-border rounded px-3 py-2 focus:outline-none focus:border-wopr-accent"
 												/>
 											)}
@@ -367,20 +308,13 @@ const Plugins: Component = () => {
 				<Show when={detailPlugin()}>
 					<div class="mb-6 bg-wopr-panel border border-wopr-border rounded-lg p-4">
 						<div class="flex items-center justify-between mb-4">
-							<h2 class="text-lg font-semibold text-wopr-accent">
-								{detailPlugin()!.name}
-							</h2>
-							<button
-								onClick={() => setDetailPlugin(null)}
-								class="text-wopr-muted hover:text-wopr-text text-sm"
-							>
+							<h2 class="text-lg font-semibold text-wopr-accent">{detailPlugin()!.name}</h2>
+							<button onClick={() => setDetailPlugin(null)} class="text-wopr-muted hover:text-wopr-text text-sm">
 								Close
 							</button>
 						</div>
 
-						<p class="text-wopr-text text-sm mb-3">
-							{detailPlugin()!.description}
-						</p>
+						<p class="text-wopr-text text-sm mb-3">{detailPlugin()!.description}</p>
 
 						<div class="grid grid-cols-2 gap-4 text-sm mb-4">
 							<div>
@@ -391,68 +325,42 @@ const Plugins: Component = () => {
 								<div>
 									<span class="text-wopr-muted">Category:</span>{" "}
 									<span class="text-wopr-text">
-										{CATEGORY_LABELS[detailPlugin()!.category!] ??
-											detailPlugin()!.category}
+										{CATEGORY_LABELS[detailPlugin()!.category!] ?? detailPlugin()!.category}
 									</span>
 								</div>
 							</Show>
 						</div>
 
-						<Show
-							when={
-								detailPlugin()!.requirements &&
-								detailPlugin()!.requirements!.length > 0
-							}
-						>
+						<Show when={detailPlugin()!.requirements && detailPlugin()!.requirements!.length > 0}>
 							<div class="mb-3">
-								<h3 class="text-sm font-semibold text-wopr-muted mb-1">
-									Requirements
-								</h3>
+								<h3 class="text-sm font-semibold text-wopr-muted mb-1">Requirements</h3>
 								<ul class="list-disc list-inside text-sm text-wopr-text">
-									<For each={detailPlugin()!.requirements!}>
-										{(req) => <li>{req}</li>}
-									</For>
+									<For each={detailPlugin()!.requirements!}>{(req) => <li>{req}</li>}</For>
 								</ul>
 							</div>
 						</Show>
 
-						<Show
-							when={
-								detailPlugin()!.setupSteps &&
-								detailPlugin()!.setupSteps!.length > 0
-							}
-						>
+						<Show when={detailPlugin()!.setupSteps && detailPlugin()!.setupSteps!.length > 0}>
 							<div class="mb-3">
-								<h3 class="text-sm font-semibold text-wopr-muted mb-1">
-									Setup Steps
-								</h3>
+								<h3 class="text-sm font-semibold text-wopr-muted mb-1">Setup Steps</h3>
 								<ol class="list-decimal list-inside text-sm text-wopr-text">
-									<For each={detailPlugin()!.setupSteps!}>
-										{(step) => <li>{step}</li>}
-									</For>
+									<For each={detailPlugin()!.setupSteps!}>{(step) => <li>{step}</li>}</For>
 								</ol>
 							</div>
 						</Show>
 
 						<Show when={detailPlugin()!.configSchema}>
 							<div class="mb-3">
-								<h3 class="text-sm font-semibold text-wopr-muted mb-1">
-									Configuration Fields
-								</h3>
+								<h3 class="text-sm font-semibold text-wopr-muted mb-1">Configuration Fields</h3>
 								<div class="space-y-1">
 									<For each={Object.entries(detailPlugin()!.configSchema!)}>
 										{([key, field]) => (
 											<div class="text-sm text-wopr-text">
 												<span class="text-wopr-accent font-mono">{key}</span>
 												<span class="text-wopr-muted"> ({field.type})</span>
-												{field.required && (
-													<span class="text-red-500 ml-1">*</span>
-												)}
+												{field.required && <span class="text-red-500 ml-1">*</span>}
 												<Show when={field.description}>
-													<span class="text-wopr-muted">
-														{" "}
-														- {field.description}
-													</span>
+													<span class="text-wopr-muted"> - {field.description}</span>
 												</Show>
 											</div>
 										)}
@@ -483,10 +391,7 @@ const Plugins: Component = () => {
 						fallback={
 							<div class="text-center text-wopr-muted py-12">
 								No plugins installed. Browse the
-								<button
-									onClick={() => setTab("available")}
-									class="text-wopr-accent hover:underline ml-1"
-								>
+								<button onClick={() => setTab("available")} class="text-wopr-accent hover:underline ml-1">
 									Available
 								</button>{" "}
 								tab to install plugins.
@@ -508,12 +413,8 @@ const Plugins: Component = () => {
 
 											<div class="min-w-0">
 												<div class="flex items-center gap-2">
-													<span class="font-semibold text-wopr-text truncate">
-														{plugin.name}
-													</span>
-													<span class="text-xs text-wopr-muted">
-														v{plugin.version}
-													</span>
+													<span class="font-semibold text-wopr-text truncate">{plugin.name}</span>
+													<span class="text-xs text-wopr-muted">v{plugin.version}</span>
 													<Show when={plugin.updateAvailable}>
 														<span class="text-xs bg-wopr-accent/20 text-wopr-accent px-1.5 py-0.5 rounded">
 															Update: v{plugin.updateAvailable}
@@ -521,15 +422,12 @@ const Plugins: Component = () => {
 													</Show>
 													<Show when={plugin.category}>
 														<span class="text-xs bg-wopr-border text-wopr-muted px-1.5 py-0.5 rounded">
-															{CATEGORY_LABELS[plugin.category!] ??
-																plugin.category}
+															{CATEGORY_LABELS[plugin.category!] ?? plugin.category}
 														</span>
 													</Show>
 												</div>
 												<Show when={plugin.description}>
-													<p class="text-sm text-wopr-muted truncate">
-														{plugin.description}
-													</p>
+													<p class="text-sm text-wopr-muted truncate">{plugin.description}</p>
 												</Show>
 											</div>
 										</div>
@@ -544,17 +442,9 @@ const Plugins: Component = () => {
 														? "bg-green-500/20 text-green-500 hover:bg-green-500/30"
 														: "bg-wopr-border text-wopr-muted hover:bg-wopr-border/80"
 												} disabled:opacity-50`}
-												title={
-													plugin.enabled
-														? "Click to disable"
-														: "Click to enable"
-												}
+												title={plugin.enabled ? "Click to disable" : "Click to enable"}
 											>
-												{toggling() === plugin.id
-													? "..."
-													: plugin.enabled
-														? "Enabled"
-														: "Disabled"}
+												{toggling() === plugin.id ? "..." : plugin.enabled ? "Enabled" : "Disabled"}
 											</button>
 
 											{/* Configure button */}
@@ -615,11 +505,7 @@ const Plugins: Component = () => {
 
 					<Show
 						when={filteredAvailable().length > 0}
-						fallback={
-							<div class="text-center text-wopr-muted py-12">
-								No available plugins found.
-							</div>
-						}
+						fallback={<div class="text-center text-wopr-muted py-12">No available plugins found.</div>}
 					>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<For each={filteredAvailable()}>
@@ -628,39 +514,26 @@ const Plugins: Component = () => {
 										<div class="flex items-start justify-between mb-2">
 											<div class="min-w-0">
 												<div class="flex items-center gap-2">
-													<span class="font-semibold text-wopr-text truncate">
-														{plugin.name}
-													</span>
-													<span class="text-xs text-wopr-muted">
-														v{plugin.version}
-													</span>
+													<span class="font-semibold text-wopr-text truncate">{plugin.name}</span>
+													<span class="text-xs text-wopr-muted">v{plugin.version}</span>
 												</div>
 												<Show when={plugin.category}>
 													<span class="text-xs bg-wopr-border text-wopr-muted px-1.5 py-0.5 rounded inline-block mt-1">
-														{CATEGORY_LABELS[plugin.category!] ??
-															plugin.category}
+														{CATEGORY_LABELS[plugin.category!] ?? plugin.category}
 													</span>
 												</Show>
 											</div>
 										</div>
 
-										<p class="text-sm text-wopr-muted mb-3 flex-1">
-											{plugin.description}
-										</p>
+										<p class="text-sm text-wopr-muted mb-3 flex-1">{plugin.description}</p>
 
 										<div class="flex items-center justify-between">
-											<button
-												onClick={() => setDetailPlugin(plugin)}
-												class="text-xs text-wopr-accent hover:underline"
-											>
+											<button onClick={() => setDetailPlugin(plugin)} class="text-xs text-wopr-accent hover:underline">
 												Details
 											</button>
 											<button
 												onClick={() => handleInstall(plugin.name)}
-												disabled={
-													isInstalled(plugin.name) ||
-													installing() === plugin.name
-												}
+												disabled={isInstalled(plugin.name) || installing() === plugin.name}
 												class="px-4 py-1.5 rounded text-xs font-semibold bg-wopr-accent text-wopr-bg hover:bg-wopr-accent/90 disabled:opacity-50"
 											>
 												{installing() === plugin.name
