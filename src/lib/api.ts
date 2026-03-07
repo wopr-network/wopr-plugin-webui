@@ -8,12 +8,7 @@ import type {
 	WebUiExtension,
 } from "@wopr-network/plugin-types";
 
-export type {
-	PluginUiComponentProps,
-	StreamMessage,
-	UiComponentExtension,
-	WebUiExtension,
-};
+export type { PluginUiComponentProps, StreamMessage, UiComponentExtension, WebUiExtension };
 
 const API_BASE = "/api";
 
@@ -129,12 +124,7 @@ export interface InjectResponse {
 	cost: number;
 }
 
-export type PluginCategory =
-	| "channel"
-	| "provider"
-	| "voice"
-	| "memory"
-	| "utility";
+export type PluginCategory = "channel" | "provider" | "voice" | "memory" | "utility";
 
 export interface InstalledPlugin {
 	id: string;
@@ -237,12 +227,7 @@ export const api = {
 		return request("/crons");
 	},
 
-	async createCron(cron: {
-		name: string;
-		schedule: string;
-		session: string;
-		message: string;
-	}): Promise<any> {
+	async createCron(cron: { name: string; schedule: string; session: string; message: string }): Promise<any> {
 		return request("/crons", {
 			method: "POST",
 			body: JSON.stringify(cron),
@@ -299,10 +284,7 @@ export const api = {
 		return request(`/plugins/${encodeURIComponent(id)}/config`);
 	},
 
-	async updatePluginConfig(
-		id: string,
-		config: Record<string, unknown>,
-	): Promise<void> {
+	async updatePluginConfig(id: string, config: Record<string, unknown>): Promise<void> {
 		await request(`/plugins/${encodeURIComponent(id)}/config`, {
 			method: "PUT",
 			body: JSON.stringify(config),
@@ -315,29 +297,17 @@ export const api = {
 	},
 
 	// Poll a plugin endpoint (status/metrics)
-	async pollPluginEndpoint(
-		pluginName: string,
-		endpoint: string,
-	): Promise<unknown> {
+	async pollPluginEndpoint(pluginName: string, endpoint: string): Promise<unknown> {
 		const normalized = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-		return request(
-			`/plugins/${encodeURIComponent(pluginName)}/proxy${normalized}`,
-		);
+		return request(`/plugins/${encodeURIComponent(pluginName)}/proxy${normalized}`);
 	},
 
 	// Set a plugin config value
-	async setPluginConfigValue(
-		pluginName: string,
-		key: string,
-		value: unknown,
-	): Promise<void> {
-		await request(
-			`/plugins/${encodeURIComponent(pluginName)}/config/${encodeURIComponent(key)}`,
-			{
-				method: "PUT",
-				body: JSON.stringify({ value }),
-			},
-		);
+	async setPluginConfigValue(pluginName: string, key: string, value: unknown): Promise<void> {
+		await request(`/plugins/${encodeURIComponent(pluginName)}/config/${encodeURIComponent(key)}`, {
+			method: "PUT",
+			body: JSON.stringify({ value }),
+		});
 	},
 
 	// Web UI Extensions
@@ -368,9 +338,7 @@ export const api = {
 	},
 
 	async getConfigValue(key: string): Promise<any> {
-		const data = await request<{ key: string; value: any }>(
-			`/config/${encodeURIComponent(key)}`,
-		);
+		const data = await request<{ key: string; value: any }>(`/config/${encodeURIComponent(key)}`);
 		return data.value;
 	},
 
