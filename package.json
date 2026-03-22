@@ -43,6 +43,13 @@
     ],
     "type": "plugin"
   },
+  "keywords": [
+    "wopr-plugin",
+    "wopr",
+    "webui",
+    "solidjs",
+    "dashboard"
+  ],
   "publishConfig": {
     "access": "public"
   },
